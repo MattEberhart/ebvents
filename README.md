@@ -11,10 +11,11 @@ Claude assisted in the making of this web app, many GPUs were harmed in the proc
 
 ## Links
 - https://ebvents.com
-- 
+- https://ebvents.vercel.app/login
+- https://github.com/MattEberhart/ebvents
 
 ## Architecture
-The table details are captured in [Database Spec](docs/database.md) and the scripts to provision them are in /supabase/migrations. You will see multiple files here since as I find issues with the schemas, I write additional scripts to migrate / fix. For a production system I would take more time to review before doing any provisioning and have bullet proof migration plans, but for a coding challenge POC with no users I like to get a good base and build from there.
+The table details are captured in [Database Spec](docs/database.md) and the scripts to provision them are in [DB Scripts](/supabase/migrations). You will see multiple files here since as I find issues with the schemas, I write additional scripts to migrate / fix. For a production system I would take more time to review before doing any provisioning and have bullet proof migration plans, but for a coding challenge POC with no users I like to get a good base and build from there.
 
 All tables are public except the auth.users table and have RLS enabled, though the RLS is simply "Is user authenticated" since for now we are allowing users to edit / delete others' events and venues.
 
@@ -75,7 +76,7 @@ I used my cloudflare images to store user avatars and venue images. In our db we
 Signup, OTP, etc emails come from supabase, but I did update them to match the app's ux. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. 
 
 ## How to Run
-- Set environment variables in .env, examples can be found in [Sample .env](/.env.local.sample)
+- Set environment variables in .env, examples can be found in [Sample .env](/.env.local.example)
 - npm run dev
 
 ## Extras
