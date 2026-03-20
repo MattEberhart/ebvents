@@ -55,6 +55,38 @@ export async function signInWithGoogle(): Promise<ActionResult<string>> {
   })
 }
 
+export async function signInWithOtp(formData: FormData): Promise<ActionResult> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+      },
+    })
+
+    if (error) throw error
+  })
+}
+
+export async function verifyOtp(formData: FormData): Promise<ActionResult> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+    const token = formData.get('token') as string
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    })
+
+    if (error) throw error
+  })
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()

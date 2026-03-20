@@ -24,6 +24,9 @@ export default async function DashboardLayout({
             ebvents
           </Link>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" render={<Link href="/venues" />}>
+              Venues
+            </Button>
             <Button size="sm" render={<Link href="/events/new" />}>
               New Event
             </Button>

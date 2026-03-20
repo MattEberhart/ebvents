@@ -18,10 +18,8 @@ import {
 
 export function EventTable({
   events,
-  userId,
 }: {
   events: EventWithVenues[]
-  userId: string
 }) {
   const router = useRouter()
 
@@ -54,8 +52,6 @@ export function EventTable({
           const past = isEventPast(event.starts_at, event.duration_minutes)
           const live = isEventLive(event.starts_at, event.duration_minutes)
           const cancelled = event.status === 'cancelled'
-          const isOwner = event.user_id === userId
-
           return (
             <TableRow
               key={event.id}
@@ -106,14 +102,12 @@ export function EventTable({
                 ))}
               </TableCell>
               <TableCell>
-                {isOwner && (
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="xs" render={<Link href={`/events/${event.id}/edit`} />}>
-                      Edit
-                    </Button>
-                    <DeleteEventButton eventId={event.id} eventName={event.name} size="xs" />
-                  </div>
-                )}
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="xs" render={<Link href={`/events/${event.id}/edit`} />}>
+                    Edit
+                  </Button>
+                  <DeleteEventButton eventId={event.id} eventName={event.name} size="xs" />
+                </div>
               </TableCell>
             </TableRow>
           )

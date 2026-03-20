@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,14 +20,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { VenueFieldArray } from '@/components/venues/VenueFieldArray'
+import { CreateSportDialog } from '@/components/events/CreateSportDialog'
 
 export function EventForm({
-  sportTypes,
+  sportTypes: initialSportTypes,
   event,
 }: {
   sportTypes: SportType[]
   event?: EventWithVenues
 }) {
+  const [sportTypes, setSportTypes] = useState(initialSportTypes)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const isEditing = !!event
@@ -100,7 +102,15 @@ export function EventForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Sport type *</Label>
+        <div className="flex items-center justify-between">
+          <Label>Sport type *</Label>
+          <CreateSportDialog
+            onCreated={(sport) => {
+              setSportTypes((prev) => [...prev, sport].sort((a, b) => a.display_order - b.display_order))
+              form.setValue('sport_type_id', sport.id)
+            }}
+          />
+        </div>
         <Controller
           control={form.control}
           name="sport_type_id"

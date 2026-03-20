@@ -5,7 +5,7 @@ Having just venue names felt lame so I made them their own entities. A user can 
 
 At this time, all users can view, edit, and delete other users' events and venues as this was my understanding of the spec. I'd like to have role based permissions in the future, but this would complicate the signup flow or ideally admins would have their own event management portal and regular users would have read only access to find their desired events.
 
-The project was implemented in Next.js, hosted in vercel, and stores data in supabase. Users may sign in with email/password, email/OTP code, or Google OAuth all managed by supabase. Database interactions are serverside with Server Actions, not API routes.
+The project was implemented in Next.js, hosted in vercel, and stores data in supabase. Users may sign in with email/password, email/OTP code, or Google OAuth all managed by supabase. Database interactions are serverside with Server Actions, not API routes. Images are in cloudflare images rather than supabase object storage for CDN serving + no montly throughput limit that supabase would impose.
 
 Claude assisted in the making of this web app, many GPUs were harmed in the process. 
 
@@ -14,7 +14,7 @@ Claude assisted in the making of this web app, many GPUs were harmed in the proc
 - 
 
 ## Architecture
-The table details are captured in [Database Spec](docs/database.md) and the scripts to provision them are in /supabase/migrations. You will see multiple files here since as I find issues with the schemas, I write additional scripts to migrate / fix. For a production system I would take more time to review before doing any provisioning, but for a coding challenge POC with no users I like to get a good base and build from there.
+The table details are captured in [Database Spec](docs/database.md) and the scripts to provision them are in /supabase/migrations. You will see multiple files here since as I find issues with the schemas, I write additional scripts to migrate / fix. For a production system I would take more time to review before doing any provisioning and have bullet proof migration plans, but for a coding challenge POC with no users I like to get a good base and build from there.
 
 All tables are public except the auth.users table and have RLS enabled, though the RLS is simply "Is user authenticated" since for now we are allowing users to edit / delete others' events and venues.
 
@@ -22,9 +22,9 @@ All tables are public except the auth.users table and have RLS enabled, though t
 This represents the user and is separate from the auth.users. The columns are id (fk to auth.users), first name, last name, avatar image id, and created at.
 Some Decisions I Made:
 - Claude suggested full name column at first. I like splitting into first and last for UX puposes. "Hi Matt" is better than "Hi Matt Eberhart"
-- Claude suggested we include the email in the profiles table. I did this once in a side project, but realized users need to have RLS access on other users' profile rows to fetch things like avatar image id or their name and this means exposing the email if it is a column in the table. That was a big migration in my app - rolling out ux to use auth.users email where appropriate then deprecating the columnn in profiles.
-- I gave the avatar image id a lot of thought on two fronts:
-  - Claude first suggested image url, which I am against because I thought it meant storing signed urls. In my side project I ruled against this as the urls wouldn't expire and could be shared. I went with server side signing based on RLS - can the user view this other user's avatar?
+- Claude suggested we include the email in the profiles table. I did this once in a side project, but realized users need to have RLS access on other users' profile rows to fetch things like avatar image id or their name and this means exposing the email if it is a column in the table. That was a big migration in my app - rolling out ux to use auth.users email where appropriate (the users own profile details) then deprecating the columnn in profiles.
+- I gave the avatar image id a lot of thought:
+  - Claude first suggested image url, which I am against because I thought it meant storing signed urls. In my side project I ruled against this as the urls wouldn't expire and could be shared. I went with server side signing with auth checks in the side project - can the user view this other user's avatar? We can check following/friend relationships server side and then sign image. Other users could only maliciously get the image id, not the cloudflare domain/path nor the signed url. 
   - I raised this concern and told Claude to move to image id. It interpreted this as storing image ids, but using public delivery urls meaning the images remain public and we can just construct the url client side based on the image id. A simple formatting helper function. I hadn't heard of public delivery urls. I had only served signed image urls on private images (or blobs in a past job)
   - I decided leaving the images public was fine for this challenge since it was an extra, avatars are only visible to the user themself at this time in the ux, and we have no friend / follow. The pattern works well for venue images as well since all users can see all venue details. I was happy we still moved from storing url to just id, since storing the whole url over and over would be redundant when it can just be a helper function + client side config.
 
@@ -53,6 +53,7 @@ Decisions:
 ### Event Venues Table
 This is a table to track the many to many relationship between events and venues. Obviously a venue can be assigne to many events over many days. The reason venue id is not just a column in Events Table is because the challenge explicitly outlines an event can have multiple venues. I was surprised this didn't mean multiple dates as well, but maybe it could be like an AAU tournament on one day with multiple courts/sportsplexes. Columns are id, event_id (fk to events), and venue_id (fk to venues).
 
+## Querying
 Given the above structures, to load the dashboard we take a subset or all of events depending on how we are paginating, join on event venues by event id, join on venues by the event id from event venues. We could join on sports types, but since it is a small table that doesn't change often I will probably pre load them into memory and fetch from there. Profiles/auth.users is unqueried for the dashboard until we do additional RLS policies like editing only your own events/venues.
 
 ### Server Actions over API Routes
@@ -65,13 +66,13 @@ Toast notifications were also totally new to me. Admittedly in my side project m
 At first I attempted to use Claude Cowork / Projects to generate UI mockups that I intended to feed to Claude Code as image parameters in the initial propmts. My Claude chat kept bugging out and losing the UI mockups when I asked for changes / screenshots so I ended up letting Claude Code decided the UX for the most part given the requirements and plan I had come up with in Claude Cowork / Projects. A hard requirement that I set in the CLAUDE.md file was to use shadcn components as per the challenge.
 
 ### Deployment
-The web app is hosted on vercel. I bought a ebvents.com on squarespace and wired it up to point to the web app. Commits to main trigger production deployments. I had to add environment variables on vercel to connect to supabase, cloudflare images, and Groq.
+The web app is hosted on vercel. I bought ebvents.com on squarespace and wired it up to point to the web app. Commits to main trigger production deployments. I had to add environment variables on vercel to connect to supabase, cloudflare images, and Groq.
 
-### Cloudlare Images
-I used my cloudflare images to store user avatars and venue images. In our db we are storing public delivery urls as references. Environment variable in vercel and my own local .env for connection.
+### Cloudflare Images
+I used my cloudflare images to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN.
 
-### Groq
-I used my groq account to add LLM based field guesses. Guessing the sport based on the description or title for example. Environment variable in vercel and my own local .env for connection.
+### Emails
+Signup, OTP, etc emails come from supabase, but I did update them to match the app's ux. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. 
 
 ## How to Run
 - Set environment variables in .env, examples can be found in [Sample .env](/.env.local.sample)

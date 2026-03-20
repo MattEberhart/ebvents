@@ -9,10 +9,8 @@ import { MapPinIcon, ClockIcon } from 'lucide-react'
 
 export function EventCard({
   event,
-  isOwner,
 }: {
   event: EventWithVenues
-  isOwner: boolean
 }) {
   const past = isEventPast(event.starts_at, event.duration_minutes)
   const live = isEventLive(event.starts_at, event.duration_minutes)
@@ -72,14 +70,12 @@ export function EventCard({
           </div>
         )}
       </CardContent>
-      {isOwner && (
-        <CardFooter className="gap-2">
-          <Button variant="outline" size="sm" render={<Link href={`/events/${event.id}/edit`} />}>
-            Edit
-          </Button>
-          <DeleteEventButton eventId={event.id} eventName={event.name} />
-        </CardFooter>
-      )}
+      <CardFooter className="gap-2">
+        <Button variant="outline" size="sm" render={<Link href={`/events/${event.id}/edit`} />}>
+          Edit
+        </Button>
+        <DeleteEventButton eventId={event.id} eventName={event.name} />
+      </CardFooter>
     </Card>
   )
 }

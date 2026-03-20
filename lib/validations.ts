@@ -28,6 +28,11 @@ export const profileSchema = z.object({
   last_name: z.string().max(50).optional(),
 })
 
+export const sportTypeSchema = z.object({
+  name: z.string().min(1, 'Sport name is required').max(50),
+})
+
 export type EventFormValues = z.infer<typeof eventSchema>
 export type VenueFormValues = z.infer<typeof venueSchema>
 export type ProfileFormValues = z.infer<typeof profileSchema>
+export type SportTypeFormValues = z.infer<typeof sportTypeSchema>

@@ -3,10 +3,8 @@ import { EventCard } from './EventCard'
 
 export function EventGrid({
   events,
-  userId,
 }: {
   events: EventWithVenues[]
-  userId: string
 }) {
   if (events.length === 0) {
     return (
@@ -25,7 +23,6 @@ export function EventGrid({
         <EventCard
           key={event.id}
           event={event}
-          isOwner={event.user_id === userId}
         />
       ))}
     </div>

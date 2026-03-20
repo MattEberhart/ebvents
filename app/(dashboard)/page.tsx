@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
 import { getEvents, getSportTypes } from '@/actions/events'
 import { EventGrid } from '@/components/events/EventGrid'
 import { EventTable } from '@/components/events/EventTable'
@@ -12,8 +11,6 @@ export default async function DashboardPage({
   searchParams: Promise<{ q?: string; sport?: string; view?: string }>
 }) {
   const params = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const [eventsResult, sportTypesResult] = await Promise.all([
     getEvents({ search: params.q, sport: params.sport }),
@@ -39,9 +36,9 @@ export default async function DashboardPage({
       </div>
 
       {view === 'list' ? (
-        <EventTable events={events} userId={user!.id} />
+        <EventTable events={events} />
       ) : (
-        <EventGrid events={events} userId={user!.id} />
+        <EventGrid events={events} />
       )}
     </div>
   )

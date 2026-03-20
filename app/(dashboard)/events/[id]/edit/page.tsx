@@ -1,5 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
 import { getEvent, getSportTypes } from '@/actions/events'
 import { EventForm } from '@/components/events/EventForm'
 
@@ -9,8 +8,6 @@ export default async function EditEventPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const [eventResult, sportTypesResult] = await Promise.all([
     getEvent(id),
@@ -18,9 +15,6 @@ export default async function EditEventPage({
   ])
 
   if (eventResult.error || !eventResult.data) notFound()
-
-  // Only the owner can edit
-  if (eventResult.data.user_id !== user?.id) redirect('/')
 
   return (
     <div className="space-y-6">

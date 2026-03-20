@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import { getEvent } from '@/actions/events'
 import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast, isEventLive } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -21,9 +20,6 @@ export default async function EventDetailPage({
 
   if (error || !event) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const isOwner = user?.id === event.user_id
   const past = isEventPast(event.starts_at, event.duration_minutes)
   const live = isEventLive(event.starts_at, event.duration_minutes)
   const cancelled = event.status === 'cancelled'
@@ -121,24 +117,20 @@ export default async function EventDetailPage({
         )}
       </div>
 
-      {isOwner && (
-        <>
-          <Separator />
-          <div className="flex items-center gap-2">
-            <Button size="sm" render={<Link href={`/events/${event.id}/edit`} />}>
-              Edit event
-            </Button>
-            {event.status === 'active' && (
-              <CancelEventButton eventId={event.id} />
-            )}
-            <DeleteEventButton
-              eventId={event.id}
-              eventName={event.name}
-              redirectTo="/"
-            />
-          </div>
-        </>
-      )}
+      <Separator />
+      <div className="flex items-center gap-2">
+        <Button size="sm" render={<Link href={`/events/${event.id}/edit`} />}>
+          Edit event
+        </Button>
+        {event.status === 'active' && (
+          <CancelEventButton eventId={event.id} />
+        )}
+        <DeleteEventButton
+          eventId={event.id}
+          eventName={event.name}
+          redirectTo="/"
+        />
+      </div>
     </div>
   )
 }

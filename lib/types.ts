@@ -23,6 +23,7 @@ export interface Venue {
   capacity: number | null
   latitude: number | null
   longitude: number | null
+  cf_image_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string

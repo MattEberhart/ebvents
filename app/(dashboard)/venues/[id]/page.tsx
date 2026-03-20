@@ -1,12 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getVenue } from '@/actions/venues'
-import { createClient } from '@/lib/supabase/server'
+import { getCfImageUrl } from '@/lib/cloudflare'
 import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { VenueImageUpload } from '@/components/venues/VenueImageUpload'
+import { DeleteVenueButton } from '@/components/venues/DeleteVenueButton'
 import { ArrowLeftIcon, MapPinIcon, UsersIcon, ClockIcon } from 'lucide-react'
 
 export default async function VenueDetailPage({
@@ -19,8 +21,7 @@ export default async function VenueDetailPage({
 
   if (error || !venue) notFound()
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const imageUrl = venue.cf_image_id ? getCfImageUrl(venue.cf_image_id) : null
 
   const upcomingEvents = venue.events
     .filter((e) => !isEventPast(e.starts_at, e.duration_minutes) && e.status === 'active')
@@ -32,10 +33,12 @@ export default async function VenueDetailPage({
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Button variant="ghost" size="sm" render={<Link href="/" />}>
+      <Button variant="ghost" size="sm" render={<Link href="/venues" />}>
         <ArrowLeftIcon className="mr-1" />
-        Back to events
+        Back to venues
       </Button>
+
+      <VenueImageUpload venueId={venue.id} imageUrl={imageUrl} />
 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{venue.name}</h1>
@@ -57,6 +60,13 @@ export default async function VenueDetailPage({
             </div>
           )}
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button size="sm" render={<Link href={`/venues/${venue.id}/edit`} />}>
+          Edit venue
+        </Button>
+        <DeleteVenueButton venueId={venue.id} venueName={venue.name} redirectTo="/venues" />
       </div>
 
       {upcomingEvents.length > 0 && (
