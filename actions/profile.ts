@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { safeAction, type ActionResult } from '@/lib/utils'
+import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 import type { Profile } from '@/lib/types'
 
 export async function getProfile(): Promise<ActionResult<Profile>> {
   return safeAction(async () => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const { data, error } = await supabase
       .from('profiles')
@@ -26,7 +26,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   return safeAction(async () => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const firstName = formData.get('first_name') as string
     const lastName = formData.get('last_name') as string | null
@@ -81,7 +81,7 @@ export async function confirmAvatarUpload(
   return safeAction(async () => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     // Get old image ID for cleanup
     const { data: profile } = await supabase

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { safeAction, type ActionResult } from '@/lib/utils'
+import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 import type { Venue, VenueWithEvents, VenueQueryParams, PaginatedResult } from '@/lib/types'
 import type { VenueFormValues } from '@/lib/validations'
 import { PAGE_SIZE } from '@/lib/constants'
@@ -112,7 +112,7 @@ export async function createVenue(values: VenueFormValues, cfImageId?: string): 
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const { data, error } = await supabase
       .from('venues')
@@ -139,7 +139,7 @@ export async function updateVenue(id: string, values: VenueFormValues, cfImageId
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {
@@ -170,7 +170,7 @@ export async function deleteVenue(id: string): Promise<ActionResult> {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const { error } = await supabase
       .from('venues')
@@ -221,7 +221,7 @@ export async function confirmVenueImageUpload(
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     // Get old image ID for cleanup
     const { data: venue } = await supabase

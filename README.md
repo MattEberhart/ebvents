@@ -1,5 +1,5 @@
 # Ebvents - A Sporting Event Scheduler
-Ebvents is a web app that allows users to view a dashboard of sporting events. The user can view all sporting event details, navigate to create and edit forms to alter events, and search or filter for sports on various fields. Key details are event name, sport type, date / time, description, and venue(s). As such, a user can also create venues and request additional sport creation. The dashboard allows user to toggle between card and table views.
+Ebvents is a web app that allows users to view a dashboard of sporting events. The user can view all sporting event details, navigate to create and edit forms to alter events, and search or filter for sports on various fields. Key details are event name, sport type, date / time, description, and venue(s). As such, a user can also create venues and sport types. The dashboard allows user to toggle between card and table views.
 
 Having just venue names felt lame so I made them their own entities. A user can create and edit venues, view details, and view a dashboard of venues similar to that of the events. These venues have additional details like address and capacity.
 
@@ -7,7 +7,7 @@ At this time, all users can view, edit, and delete other users' events and venue
 
 The project was implemented in Next.js, hosted in vercel, and stores data in supabase. Users may sign in with email/password, email/OTP code, or Google OAuth all managed by supabase. Google OAuth was new to me, I had to create a Google Cloud account, create an identity, and wire it up in supabase. Database interactions are serverside with Server Actions, not API routes. Images are in cloudflare images rather than supabase object storage for CDN serving + no montly throughput limit that supabase would impose.
 
-Claude assisted in the making of this web app, many GPUs were harmed in the process. 
+Claude Code assisted in the making of this web app, many GPUs were harmed in the process. 
 
 ## Links
 - https://ebvents.com
@@ -75,7 +75,19 @@ One potential critique is that this only works because the front end and server 
 - [Profiles](actions/profile.ts)
 
 ### Toast Notifications
-Toast notifications were also totally new to me. Admittedly in my side project my "notifications" are just a table with a type, message, and read field. I have to fetch them and prompt the user to click a notifications button to expand the drop down.
+Toast notifications were also totally new to me. The immediate feedback to the user is a pleasant guide on how to navigate the app. It is nice to be able to wrap any code in a toast.success/toast.error and get a message to the user.  The current functionality also does not require persistent notifications so there is no need to store these notifications. Down the road if there were some review/approve flow for event creation, we would need to store these somewhere to list for the user when they sign back in.
+
+Notifications:
+- Event created, updated, deleted, cancelled
+- Venue created, updated, deleted
+- Sport created
+- Avatar image updated
+- Welcome back
+- Not authenticated
+- Sport name is required
+- Sport already exists
+- An unexpected error occurred
+- Email confirmed
 
 
 ### UI
@@ -104,16 +116,22 @@ Signup, OTP, etc emails come from supabase, but I did update them to match the a
 
 ## Extras
 - Events
-    - LLM based field autofill in event creation
-    - Capturing event images
+    - Status (Active/Cancelled, implied upcoming/completed)
+    - Click for venue details
+    - Card grid and table views, various filters, name search, order by
+    - Pagination, infinite scrolling for cards and next page for table
 - Venues
     - Additional venue details other than just name
     - Venue Dashboard
     - Capturing Venue Address
     - Capturing Venue Images
 - Sports
+    - Table tracking, not enum or ruleless user input
     - Many sports provisioned by default
-    - User may request a new sport by filling out a sport creation form. All users are admins and can approve their own requests at this time.
+    - Additional sport creation
+- Profiles
+    - Profile details slide out
+    - Avatar uploads
 
 ## TODOS
 As I was building I had ideas for more features and captured them in the [Todos Folder](docs/todos) folder.

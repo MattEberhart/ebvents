@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { safeAction, type ActionResult } from '@/lib/utils'
+import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 import type { EventWithVenues, EventQueryParams, PaginatedResult } from '@/lib/types'
 import type { EventFormValues } from '@/lib/validations'
 import { PAGE_SIZE } from '@/lib/constants'
@@ -72,7 +72,7 @@ export async function createEvent(values: EventFormValues): Promise<ActionResult
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const startsAt = new Date(`${values.start_date}T${values.start_time}`).toISOString()
 
@@ -103,7 +103,7 @@ export async function updateEvent(id: string, values: EventFormValues): Promise<
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const startsAt = new Date(`${values.start_date}T${values.start_time}`).toISOString()
 
@@ -140,7 +140,7 @@ export async function deleteEvent(id: string): Promise<ActionResult> {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const { error } = await supabase
       .from('events')
@@ -157,7 +157,7 @@ export async function cancelEvent(id: string): Promise<ActionResult> {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Not authenticated')
+    if (!user) throw new UserError('Not authenticated')
 
     const { error } = await supabase
       .from('events')

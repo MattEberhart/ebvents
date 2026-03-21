@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { safeAction, type ActionResult } from '@/lib/utils'
+import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 import type { SportType } from '@/lib/types'
 
 export async function createSportType(name: string): Promise<ActionResult<SportType>> {
   return safeAction(async () => {
     const supabase = await createClient()
     const trimmed = name.trim()
-    if (!trimmed) throw new Error('Sport name is required')
+    if (!trimmed) throw new UserError('Sport name is required')
 
     // Check for duplicate (case-insensitive)
     const { data: existing } = await supabase
@@ -18,7 +18,7 @@ export async function createSportType(name: string): Promise<ActionResult<SportT
       .ilike('name', trimmed)
       .maybeSingle()
 
-    if (existing) throw new Error(`"${trimmed}" already exists`)
+    if (existing) throw new UserError(`"${trimmed}" already exists`)
 
     // Get the max display_order to append at the end
     const { data: maxRow } = await supabase

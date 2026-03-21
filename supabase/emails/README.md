@@ -28,6 +28,6 @@ Go to **Authentication > Email Templates** and paste each file's HTML:
 
 ### Template variables
 
-- `{{ .Token }}` — 6-digit OTP code (used in all templates)
+- `{{ .Token }}` — 8-digit OTP code (used in all templates)
 - `{{ .ConfirmationURL }}` — NOT used (we use code flow, not link flow)
 - `{{ .SiteURL }}` — Available but not used in current templates

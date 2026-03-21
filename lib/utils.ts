@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Throw UserError for messages safe to show in toasts.
+// Any other thrown error becomes a generic "An unexpected error occurred".
+export class UserError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UserError'
+  }
+}
+
 // safeAction wrapper — every Server Action uses this
 export type ActionResult<T = void> =
   | { data: T; error: null }
@@ -14,9 +23,10 @@ export async function safeAction<T>(fn: () => Promise<T>): Promise<ActionResult<
   try {
     return { data: await fn(), error: null }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An unexpected error occurred'
-    console.error('[safeAction]', message)
-    return { data: null, error: message }
+    const realMessage = err instanceof Error ? err.message : String(err)
+    console.error('[safeAction]', realMessage)
+    const userMessage = err instanceof UserError ? err.message : 'An unexpected error occurred'
+    return { data: null, error: userMessage }
   }
 }
 

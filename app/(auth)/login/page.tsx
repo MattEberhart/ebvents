@@ -63,7 +63,7 @@ export default function LoginPage() {
         toast.error(error)
         return
       }
-      toast.success('Welcome back!')
+      toast.success('Email verified — welcome back!')
       router.push('/')
       router.refresh()
     })
@@ -161,7 +161,7 @@ export default function LoginPage() {
             <>
               <form onSubmit={handleOtpVerify} className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  We sent a 6-digit code to <span className="font-medium text-foreground">{otpEmail}</span>
+                  We sent an 8-digit code to <span className="font-medium text-foreground">{otpEmail}</span>
                 </p>
                 <div className="space-y-1.5">
                   <Label htmlFor="token">Verification code</Label>
@@ -170,9 +170,9 @@ export default function LoginPage() {
                     name="token"
                     type="text"
                     inputMode="numeric"
-                    pattern="[0-9]{6}"
-                    maxLength={6}
-                    placeholder="000000"
+                    pattern="[0-9]{8}"
+                    maxLength={8}
+                    placeholder="00000000"
                     required
                     autoComplete="one-time-code"
                     className="text-center text-lg tracking-widest"

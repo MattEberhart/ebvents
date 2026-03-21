@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { safeAction, type ActionResult } from '@/lib/utils'
+import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 
 export async function signUp(formData: FormData): Promise<ActionResult> {
   return safeAction(async () => {
@@ -20,7 +20,7 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
       },
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
@@ -35,7 +35,7 @@ export async function signIn(formData: FormData): Promise<ActionResult> {
       password,
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
@@ -50,7 +50,7 @@ export async function signInWithGoogle(): Promise<ActionResult<string>> {
       },
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
     return data.url
   })
 }
@@ -67,7 +67,7 @@ export async function signInWithOtp(formData: FormData): Promise<ActionResult> {
       },
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
@@ -83,7 +83,7 @@ export async function verifyOtp(formData: FormData): Promise<ActionResult> {
       type: 'email',
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
@@ -99,7 +99,7 @@ export async function verifySignupOtp(formData: FormData): Promise<ActionResult>
       type: 'signup',
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
@@ -113,7 +113,7 @@ export async function resendSignupConfirmation(formData: FormData): Promise<Acti
       email,
     })
 
-    if (error) throw error
+    if (error) throw new UserError(error.message)
   })
 }
 
