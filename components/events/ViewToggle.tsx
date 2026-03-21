@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { LayoutGridIcon, ListIcon } from 'lucide-react'
 
-export function ViewToggle() {
+export function ViewToggle({ basePath = '/' }: { basePath?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const view = searchParams.get('view') ?? 'grid'
@@ -12,7 +12,7 @@ export function ViewToggle() {
   function toggle(newView: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set('view', newView)
-    router.push(`/?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   return (

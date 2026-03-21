@@ -1,4 +1,4 @@
-import { getSportTypes } from '@/actions/events'
+import { getSportTypes } from '@/actions/sport-types'
 import { EventForm } from '@/components/events/EventForm'
 
 export default async function NewEventPage() {

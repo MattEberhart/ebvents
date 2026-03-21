@@ -50,3 +50,32 @@ export interface EventWithVenues extends Event {
 export interface VenueWithEvents extends Venue {
   events: EventWithVenues[]
 }
+
+export interface PaginatedResult<T> {
+  items: T[]
+  total: number
+  hasMore: boolean
+}
+
+export type SortDir = 'asc' | 'desc'
+
+export interface PaginationParams {
+  page?: number
+  pageSize?: number
+}
+
+export interface EventQueryParams extends PaginationParams {
+  search?: string
+  sport?: string
+  status?: 'active' | 'cancelled' | 'all'
+  sortBy?: 'starts_at' | 'name'
+  sortDir?: SortDir
+}
+
+export interface VenueQueryParams extends PaginationParams {
+  search?: string
+  sortBy?: 'name' | 'capacity'
+  sortDir?: SortDir
+  capacityMin?: number
+  capacityMax?: number
+}

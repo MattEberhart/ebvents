@@ -3,78 +3,31 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeAction, type ActionResult } from '@/lib/utils'
-import type { EventWithVenues, SportType } from '@/lib/types'
+import type { EventWithVenues, EventQueryParams, PaginatedResult } from '@/lib/types'
 import type { EventFormValues } from '@/lib/validations'
+import { PAGE_SIZE } from '@/lib/constants'
+import { EVENT_WITH_VENUES_SELECT, mapEventWithVenues, paginationRange, upsertVenuesForEvent } from '@/lib/queries'
 
-export async function createSportType(name: string): Promise<ActionResult<SportType>> {
+export async function getEvents(params?: EventQueryParams): Promise<ActionResult<PaginatedResult<EventWithVenues>>> {
   return safeAction(async () => {
     const supabase = await createClient()
-    const trimmed = name.trim()
-    if (!trimmed) throw new Error('Sport name is required')
+    const page = params?.page ?? 1
+    const pageSize = params?.pageSize ?? PAGE_SIZE
+    const { from, to } = paginationRange(page, pageSize)
 
-    // Check for duplicate (case-insensitive)
-    const { data: existing } = await supabase
-      .from('sport_types')
-      .select('id')
-      .ilike('name', trimmed)
-      .maybeSingle()
-
-    if (existing) throw new Error(`"${trimmed}" already exists`)
-
-    // Get the max display_order to append at the end
-    const { data: maxRow } = await supabase
-      .from('sport_types')
-      .select('display_order')
-      .order('display_order', { ascending: false })
-      .limit(1)
-      .single()
-
-    const nextOrder = (maxRow?.display_order ?? 98) + 1
-
-    const { data, error } = await supabase
-      .from('sport_types')
-      .insert({ name: trimmed, display_order: nextOrder })
-      .select('*')
-      .single()
-
-    if (error) throw error
-    revalidatePath('/')
-    return data as SportType
-  })
-}
-
-export async function getSportTypes(): Promise<ActionResult<SportType[]>> {
-  return safeAction(async () => {
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from('sport_types')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order')
-
-    if (error) throw error
-    return data
-  })
-}
-
-export async function getEvents(params?: {
-  search?: string
-  sport?: string
-}): Promise<ActionResult<EventWithVenues[]>> {
-  return safeAction(async () => {
-    const supabase = await createClient()
+    const sortBy = params?.sortBy ?? 'starts_at'
+    const ascending = (params?.sortDir ?? 'desc') === 'asc'
+    const status = params?.status ?? 'all'
 
     let query = supabase
       .from('events')
-      .select(`
-        *,
-        sport_type:sport_types(*),
-        event_venues(
-          venue:venues(*)
-        )
-      `)
-      .eq('status', 'active')
-      .order('starts_at', { ascending: false })
+      .select(EVENT_WITH_VENUES_SELECT, { count: 'exact' })
+      .order(sortBy, { ascending })
+      .range(from, to)
+
+    if (status !== 'all') {
+      query = query.eq('status', status)
+    }
 
     if (params?.search) {
       query = query.ilike('name', `%${params.search}%`)
@@ -84,16 +37,18 @@ export async function getEvents(params?: {
       query = query.eq('sport_type_id', params.sport)
     }
 
-    const { data, error } = await query
+    const { data, error, count } = await query
 
     if (error) throw error
 
-    return (data ?? []).map((event) => ({
-      ...event,
-      sport_type: event.sport_type,
-      venues: event.event_venues?.map((ev: { venue: unknown }) => ev.venue) ?? [],
-      event_venues: undefined,
-    })) as EventWithVenues[]
+    const total = count ?? 0
+    const items = (data ?? []).map(mapEventWithVenues)
+
+    return {
+      items,
+      total,
+      hasMore: from + items.length < total,
+    }
   })
 }
 
@@ -103,24 +58,12 @@ export async function getEvent(id: string): Promise<ActionResult<EventWithVenues
 
     const { data, error } = await supabase
       .from('events')
-      .select(`
-        *,
-        sport_type:sport_types(*),
-        event_venues(
-          venue:venues(*)
-        )
-      `)
+      .select(EVENT_WITH_VENUES_SELECT)
       .eq('id', id)
       .single()
 
     if (error) throw error
-
-    return {
-      ...data,
-      sport_type: data.sport_type,
-      venues: data.event_venues?.map((ev: { venue: unknown }) => ev.venue) ?? [],
-      event_venues: undefined,
-    } as EventWithVenues
+    return mapEventWithVenues(data)
   })
 }
 
@@ -133,7 +76,6 @@ export async function createEvent(values: EventFormValues): Promise<ActionResult
 
     const startsAt = new Date(`${values.start_date}T${values.start_time}`).toISOString()
 
-    // Insert the event
     const { data: event, error: eventError } = await supabase
       .from('events')
       .insert({
@@ -149,34 +91,7 @@ export async function createEvent(values: EventFormValues): Promise<ActionResult
 
     if (eventError) throw eventError
 
-    // Upsert venues and create junction rows
-    for (const venue of values.venues) {
-      let venueId = venue.id
-
-      if (!venueId) {
-        const { data: newVenue, error: venueError } = await supabase
-          .from('venues')
-          .insert({
-            name: venue.name,
-            address: venue.address || null,
-            city: venue.city || null,
-            state: venue.state || null,
-            capacity: venue.capacity ? Number(venue.capacity) : null,
-            created_by: user.id,
-          })
-          .select('id')
-          .single()
-
-        if (venueError) throw venueError
-        venueId = newVenue.id
-      }
-
-      const { error: junctionError } = await supabase
-        .from('event_venues')
-        .insert({ event_id: event.id, venue_id: venueId })
-
-      if (junctionError) throw junctionError
-    }
+    await upsertVenuesForEvent(supabase, event.id, values.venues, user.id)
 
     revalidatePath('/')
     return event.id
@@ -192,7 +107,6 @@ export async function updateEvent(id: string, values: EventFormValues): Promise<
 
     const startsAt = new Date(`${values.start_date}T${values.start_time}`).toISOString()
 
-    // Update the event row
     const { error: eventError } = await supabase
       .from('events')
       .update({
@@ -214,34 +128,7 @@ export async function updateEvent(id: string, values: EventFormValues): Promise<
 
     if (deleteError) throw deleteError
 
-    // Re-create venues + junction rows
-    for (const venue of values.venues) {
-      let venueId = venue.id
-
-      if (!venueId) {
-        const { data: newVenue, error: venueError } = await supabase
-          .from('venues')
-          .insert({
-            name: venue.name,
-            address: venue.address || null,
-            city: venue.city || null,
-            state: venue.state || null,
-            capacity: venue.capacity ? Number(venue.capacity) : null,
-            created_by: user.id,
-          })
-          .select('id')
-          .single()
-
-        if (venueError) throw venueError
-        venueId = newVenue.id
-      }
-
-      const { error: junctionError } = await supabase
-        .from('event_venues')
-        .insert({ event_id: id, venue_id: venueId })
-
-      if (junctionError) throw junctionError
-    }
+    await upsertVenuesForEvent(supabase, id, values.venues, user.id)
 
     revalidatePath('/')
     revalidatePath(`/events/${id}`)

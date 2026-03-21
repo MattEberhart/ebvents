@@ -3,10 +3,53 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeAction, type ActionResult } from '@/lib/utils'
-import type { Venue, VenueWithEvents, EventWithVenues } from '@/lib/types'
+import type { Venue, VenueWithEvents, VenueQueryParams, PaginatedResult } from '@/lib/types'
 import type { VenueFormValues } from '@/lib/validations'
+import { PAGE_SIZE } from '@/lib/constants'
+import { mapEventWithVenues, paginationRange } from '@/lib/queries'
 
-export async function getVenues(search?: string): Promise<ActionResult<Venue[]>> {
+export async function getVenues(params?: VenueQueryParams): Promise<ActionResult<PaginatedResult<Venue>>> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+    const page = params?.page ?? 1
+    const pageSize = params?.pageSize ?? PAGE_SIZE
+    const { from, to } = paginationRange(page, pageSize)
+
+    const sortBy = params?.sortBy ?? 'name'
+    const ascending = (params?.sortDir ?? 'asc') === 'asc'
+
+    let query = supabase
+      .from('venues')
+      .select('*', { count: 'exact' })
+      .order(sortBy, { ascending, nullsFirst: false })
+      .range(from, to)
+
+    if (params?.search) {
+      query = query.ilike('name', `%${params.search}%`)
+    }
+
+    if (params?.capacityMin) {
+      query = query.gte('capacity', params.capacityMin)
+    }
+
+    if (params?.capacityMax) {
+      query = query.lte('capacity', params.capacityMax)
+    }
+
+    const { data, error, count } = await query
+
+    if (error) throw error
+
+    const total = count ?? 0
+    return {
+      items: data ?? [],
+      total,
+      hasMore: from + (data?.length ?? 0) < total,
+    }
+  })
+}
+
+export async function searchVenues(search: string): Promise<ActionResult<Venue[]>> {
   return safeAction(async () => {
     const supabase = await createClient()
 
@@ -14,15 +57,16 @@ export async function getVenues(search?: string): Promise<ActionResult<Venue[]>>
       .from('venues')
       .select('*')
       .order('name')
+      .limit(20)
 
-    if (search) {
+    if (search.trim()) {
       query = query.ilike('name', `%${search}%`)
     }
 
     const { data, error } = await query
 
     if (error) throw error
-    return data
+    return data ?? []
   })
 }
 
@@ -30,7 +74,6 @@ export async function getVenue(id: string): Promise<ActionResult<VenueWithEvents
   return safeAction(async () => {
     const supabase = await createClient()
 
-    // Fetch venue
     const { data: venue, error: venueError } = await supabase
       .from('venues')
       .select('*')
@@ -39,7 +82,6 @@ export async function getVenue(id: string): Promise<ActionResult<VenueWithEvents
 
     if (venueError) throw venueError
 
-    // Fetch events at this venue
     const { data: eventVenues, error: evError } = await supabase
       .from('event_venues')
       .select(`
@@ -56,14 +98,7 @@ export async function getVenue(id: string): Promise<ActionResult<VenueWithEvents
     if (evError) throw evError
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const events = (eventVenues ?? []).map((ev: any) => {
-      const event = ev.event
-      return {
-        ...event,
-        sport_type: event.sport_type,
-        venues: event.event_venues?.map((v: any) => v.venue) ?? [],
-      }
-    }) as unknown as EventWithVenues[]
+    const events = (eventVenues ?? []).map((ev: any) => mapEventWithVenues(ev.event))
 
     return {
       ...venue,
@@ -72,7 +107,7 @@ export async function getVenue(id: string): Promise<ActionResult<VenueWithEvents
   })
 }
 
-export async function createVenue(values: VenueFormValues): Promise<ActionResult<string>> {
+export async function createVenue(values: VenueFormValues, cfImageId?: string): Promise<ActionResult<string>> {
   return safeAction(async () => {
     const supabase = await createClient()
 
@@ -87,6 +122,7 @@ export async function createVenue(values: VenueFormValues): Promise<ActionResult
         city: values.city || null,
         state: values.state || null,
         capacity: values.capacity ? Number(values.capacity) : null,
+        cf_image_id: cfImageId || null,
         created_by: user.id,
       })
       .select('id')
@@ -98,22 +134,29 @@ export async function createVenue(values: VenueFormValues): Promise<ActionResult
   })
 }
 
-export async function updateVenue(id: string, values: VenueFormValues): Promise<ActionResult> {
+export async function updateVenue(id: string, values: VenueFormValues, cfImageId?: string): Promise<ActionResult> {
   return safeAction(async () => {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {
+      name: values.name,
+      address: values.address || null,
+      city: values.city || null,
+      state: values.state || null,
+      capacity: values.capacity ? Number(values.capacity) : null,
+    }
+
+    if (cfImageId !== undefined) {
+      updateData.cf_image_id = cfImageId || null
+    }
+
     const { error } = await supabase
       .from('venues')
-      .update({
-        name: values.name,
-        address: values.address || null,
-        city: values.city || null,
-        state: values.state || null,
-        capacity: values.capacity ? Number(values.capacity) : null,
-      })
+      .update(updateData)
       .eq('id', id)
 
     if (error) throw error

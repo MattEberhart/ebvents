@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getEvent, getSportTypes } from '@/actions/events'
+import { getEvent } from '@/actions/events'
+import { getSportTypes } from '@/actions/sport-types'
 import { EventForm } from '@/components/events/EventForm'
 
 export default async function EditEventPage({

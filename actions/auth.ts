@@ -87,6 +87,36 @@ export async function verifyOtp(formData: FormData): Promise<ActionResult> {
   })
 }
 
+export async function verifySignupOtp(formData: FormData): Promise<ActionResult> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+    const token = formData.get('token') as string
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    })
+
+    if (error) throw error
+  })
+}
+
+export async function resendSignupConfirmation(formData: FormData): Promise<ActionResult> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    })
+
+    if (error) throw error
+  })
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()

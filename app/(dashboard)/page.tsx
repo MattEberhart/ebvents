@@ -1,23 +1,42 @@
 import { Suspense } from 'react'
-import { getEvents, getSportTypes } from '@/actions/events'
+import { getEvents } from '@/actions/events'
+import { getSportTypes } from '@/actions/sport-types'
 import { EventGrid } from '@/components/events/EventGrid'
 import { EventTable } from '@/components/events/EventTable'
 import { EventSearch } from '@/components/events/EventSearch'
 import { ViewToggle } from '@/components/events/ViewToggle'
+import { Pagination } from '@/components/Pagination'
+import { PAGE_SIZE } from '@/lib/constants'
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sport?: string; view?: string }>
+  searchParams: Promise<{
+    q?: string
+    sport?: string
+    view?: string
+    page?: string
+    sort?: string
+    order?: string
+    status?: string
+  }>
 }) {
   const params = await searchParams
+  const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1)
 
   const [eventsResult, sportTypesResult] = await Promise.all([
-    getEvents({ search: params.q, sport: params.sport }),
+    getEvents({
+      search: params.q,
+      sport: params.sport,
+      page,
+      sortBy: (params.sort as 'starts_at' | 'name') || undefined,
+      sortDir: (params.order as 'asc' | 'desc') || undefined,
+      status: (params.status as 'active' | 'cancelled' | 'all') || undefined,
+    }),
     getSportTypes(),
   ])
 
-  const events = eventsResult.data ?? []
+  const { items: events, total } = eventsResult.data ?? { items: [], total: 0 }
   const sportTypes = sportTypesResult.data ?? []
   const view = params.view ?? 'grid'
 
@@ -40,6 +59,10 @@ export default async function DashboardPage({
       ) : (
         <EventGrid events={events} />
       )}
+
+      <Suspense>
+        <Pagination currentPage={page} total={total} pageSize={PAGE_SIZE} />
+      </Suspense>
     </div>
   )
 }

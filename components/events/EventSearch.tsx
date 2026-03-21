@@ -1,8 +1,9 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -11,12 +12,23 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { SportType } from '@/lib/types'
-import { SearchIcon } from 'lucide-react'
+import { SearchIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 
 export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
+
+  const sortBy = searchParams.get('sort') ?? 'starts_at'
+  const sortDir = searchParams.get('order') ?? 'desc'
+  const status = searchParams.get('status') ?? 'all'
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   const updateParams = useCallback(
     (key: string, value: string) => {
@@ -26,12 +38,25 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
       } else {
         params.delete(key)
       }
+      params.delete('page')
       startTransition(() => {
         router.push(`/?${params.toString()}`)
       })
     },
     [router, searchParams, startTransition]
   )
+
+  const debouncedSearch = useCallback(
+    (value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => updateParams('q', value), 300)
+    },
+    [updateParams]
+  )
+
+  function toggleSortDir() {
+    updateParams('order', sortDir === 'asc' ? 'desc' : 'asc')
+  }
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -40,15 +65,15 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
         <Input
           placeholder="Search events…"
           defaultValue={searchParams.get('q') ?? ''}
-          onChange={(e) => updateParams('q', e.target.value)}
+          onChange={(e) => debouncedSearch(e.target.value)}
           className="pl-8"
         />
       </div>
       <Select
         value={searchParams.get('sport') ?? undefined}
-        onValueChange={(value) => updateParams('sport', value as string)}
+        onValueChange={(value) => updateParams('sport', value ?? '')}
       >
-        <SelectTrigger className="w-full sm:w-[180px]">
+        <SelectTrigger className="w-full sm:w-[150px]">
           <SelectValue placeholder="All sports" />
         </SelectTrigger>
         <SelectContent>
@@ -60,6 +85,41 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
           ))}
         </SelectContent>
       </Select>
+      <Select
+        value={status}
+        onValueChange={(value) => updateParams('status', value ?? '')}
+      >
+        <SelectTrigger className="w-full sm:w-[140px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="cancelled">Cancelled</SelectItem>
+        </SelectContent>
+      </Select>
+      <div className="flex items-center gap-1">
+        <Select
+          value={sortBy}
+          onValueChange={(value) => updateParams('sort', value ?? '')}
+        >
+          <SelectTrigger className="w-full sm:w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="starts_at">Date</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={toggleSortDir}
+          aria-label={sortDir === 'asc' ? 'Sort ascending' : 'Sort descending'}
+        >
+          {sortDir === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />}
+        </Button>
+      </div>
     </div>
   )
 }

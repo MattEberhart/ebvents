@@ -4,7 +4,8 @@ import { signOut } from '@/actions/auth'
 import { getProfile } from '@/actions/profile'
 import { getAvatarUrl } from '@/lib/cloudflare'
 import { Button } from '@/components/ui/button'
-import AvatarUpload from '@/components/AvatarUpload'
+import { NavLinks } from '@/components/NavLinks'
+import { AccountSheet } from '@/components/AccountSheet'
 
 export default async function DashboardLayout({
   children,
@@ -24,14 +25,14 @@ export default async function DashboardLayout({
             ebvents
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" render={<Link href="/venues" />}>
-              Venues
-            </Button>
-            <Button size="sm" render={<Link href="/events/new" />}>
-              New Event
-            </Button>
+            <NavLinks />
             <div className="flex items-center gap-2">
-              <AvatarUpload avatarUrl={avatarUrl} firstName={profile?.first_name ?? null} />
+              <AccountSheet
+                avatarUrl={avatarUrl}
+                firstName={profile?.first_name ?? null}
+                lastName={profile?.last_name ?? null}
+                email={user?.email ?? ''}
+              />
               {profile?.first_name && (
                 <span className="hidden text-sm sm:inline">
                   Hi, {profile.first_name}
