@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeAction, UserError, type ActionResult } from '@/lib/utils'
+import { deleteCfImage } from '@/lib/cloudflare'
 import type { Profile } from '@/lib/types'
 
 export async function getProfile(): Promise<ActionResult<Profile>> {
@@ -102,19 +103,7 @@ export async function confirmAvatarUpload(
 
     // Delete old CF image if it existed
     if (oldImageId) {
-      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-      const apiToken = process.env.CLOUDFLARE_IMAGES_API_TOKEN
-      if (accountId && apiToken) {
-        await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${oldImageId}`,
-          {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${apiToken}` },
-          },
-        ).catch(() => {
-          // Non-critical — old image will remain in CF but won't be referenced
-        })
-      }
+      await deleteCfImage(oldImageId)
     }
 
     revalidatePath('/')

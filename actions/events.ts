@@ -169,3 +169,21 @@ export async function cancelEvent(id: string): Promise<ActionResult> {
     revalidatePath(`/events/${id}`)
   })
 }
+
+export async function reactivateEvent(id: string): Promise<ActionResult> {
+  return safeAction(async () => {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new UserError('Not authenticated')
+
+    const { error } = await supabase
+      .from('events')
+      .update({ status: 'active' })
+      .eq('id', id)
+
+    if (error) throw error
+    revalidatePath('/')
+    revalidatePath(`/events/${id}`)
+  })
+}

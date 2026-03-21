@@ -74,7 +74,9 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
         onValueChange={(value) => updateParams('sport', value ?? '')}
       >
         <SelectTrigger className="w-full sm:w-[150px]">
-          <SelectValue placeholder="All sports" />
+          <SelectValue placeholder="All sports">
+            {sportTypes.find((s) => s.id === searchParams.get('sport'))?.name ?? 'All sports'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="">All sports</SelectItem>
@@ -103,8 +105,10 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
           value={sortBy}
           onValueChange={(value) => updateParams('sort', value ?? '')}
         >
-          <SelectTrigger className="w-full sm:w-[120px]">
-            <SelectValue />
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue>
+              Sort by: {sortBy === 'starts_at' ? 'Date' : 'Name'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="starts_at">Date</SelectItem>

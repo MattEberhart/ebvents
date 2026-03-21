@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { profileSchema, type ProfileFormValues } from '@/lib/validations'
 import { updateProfile, requestAvatarUploadUrl, confirmAvatarUpload } from '@/actions/profile'
+import { signOut } from '@/actions/auth'
 import {
   Sheet,
   SheetTrigger,
@@ -17,7 +18,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { CameraIcon } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { CameraIcon, LogOutIcon } from 'lucide-react'
 
 interface AccountSheetProps {
   avatarUrl: string | null
@@ -195,6 +197,15 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
             </div>
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? 'Saving…' : 'Save changes'}
+            </Button>
+          </form>
+
+          <Separator />
+
+          <form action={signOut}>
+            <Button variant="ghost" className="w-full justify-start text-destructive" type="submit">
+              <LogOutIcon className="mr-2 size-4" />
+              Sign out
             </Button>
           </form>
         </div>

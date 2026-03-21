@@ -7,6 +7,22 @@ export function getCfImageUrl(imageId: string, variant = 'public'): string {
   return `https://imagedelivery.net/${CF_ACCOUNT_HASH}/${imageId}/${variant}`
 }
 
+export async function deleteCfImage(imageId: string): Promise<void> {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
+  const apiToken = process.env.CLOUDFLARE_IMAGES_API_TOKEN
+  if (!accountId || !apiToken) return
+
+  await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${imageId}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${apiToken}` },
+    },
+  ).catch(() => {
+    // Non-critical — image will remain in CF but won't be referenced
+  })
+}
+
 export function getAvatarUrl(
   profile: Profile | null,
   user: User | null,

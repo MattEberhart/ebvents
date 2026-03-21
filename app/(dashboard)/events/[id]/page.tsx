@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getEvent } from '@/actions/events'
-import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast, isEventLive } from '@/lib/utils'
+import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast, isEventLive } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { DeleteEventButton } from '@/components/events/DeleteEventButton'
 import { CancelEventButton } from '@/components/events/CancelEventButton'
+import { ReactivateEventButton } from '@/components/events/ReactivateEventButton'
 import { MapPinIcon, ClockIcon, CalendarIcon, ArrowLeftIcon, UsersIcon } from 'lucide-react'
 
 export default async function EventDetailPage({
@@ -62,7 +63,7 @@ export default async function EventDetailPage({
           </div>
           <div className="flex items-center gap-1.5">
             <ClockIcon className="size-4" />
-            {formatEventTime(event.starts_at)} · {formatDuration(event.duration_minutes)}
+            {formatEventTimeRange(event.starts_at, event.duration_minutes)}
           </div>
         </div>
 
@@ -85,7 +86,7 @@ export default async function EventDetailPage({
                   <CardHeader>
                     <CardTitle>
                       <Link
-                        href={`/venues/${venue.id}`}
+                        href={`/venues/${venue.id}?from=/events/${event.id}`}
                         className="hover:underline"
                       >
                         {venue.name}
@@ -97,7 +98,7 @@ export default async function EventDetailPage({
                       <div className="flex items-start gap-1.5">
                         <MapPinIcon className="size-3.5 mt-0.5 shrink-0" />
                         <span>
-                          {[venue.address, venue.city, venue.state]
+                          {[venue.address, venue.city, venue.state, venue.zip_code]
                             .filter(Boolean)
                             .join(', ')}
                         </span>
@@ -124,6 +125,9 @@ export default async function EventDetailPage({
         </Button>
         {event.status === 'active' && (
           <CancelEventButton eventId={event.id} />
+        )}
+        {event.status === 'cancelled' && (
+          <ReactivateEventButton eventId={event.id} />
         )}
         <DeleteEventButton
           eventId={event.id}

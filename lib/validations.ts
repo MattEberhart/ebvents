@@ -6,6 +6,8 @@ export const venueSchema = z.object({
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  zip_code: z.string().optional(),
+  cf_image_id: z.string().optional(),
   capacity: z.coerce
     .number()
     .positive('Capacity must be positive')

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useTransition } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { EventFormValues } from '@/lib/validations'
 import type { Venue } from '@/lib/types'
-import { searchVenues } from '@/actions/venues'
+import { searchVenues, requestVenueImageUploadUrl } from '@/actions/venues'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,7 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command'
-import { TrashIcon, SearchIcon, PlusIcon, MapPinIcon, UsersIcon } from 'lucide-react'
+import { TrashIcon, SearchIcon, PlusIcon, MapPinIcon, UsersIcon, ImageIcon, XIcon } from 'lucide-react'
 
 type SlotMode = 'search' | 'create' | 'selected'
 
@@ -37,6 +38,12 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null)
 
+  // Image upload state for create mode
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, startUpload] = useTransition()
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [venueImageId, setVenueImageId] = useState<string | null>(null)
+
   const errors = form.formState.errors
 
   // Load selected venue info on mount if we have an id
@@ -51,6 +58,7 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
         address: form.getValues(`venues.${index}.address`) ?? null,
         city: form.getValues(`venues.${index}.city`) ?? null,
         state: form.getValues(`venues.${index}.state`) ?? null,
+        zip_code: null,
         capacity: form.getValues(`venues.${index}.capacity`) as number | null ?? null,
         cf_image_id: null,
         latitude: null,
@@ -88,6 +96,7 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
     form.setValue(`venues.${index}.address`, venue.address ?? '')
     form.setValue(`venues.${index}.city`, venue.city ?? '')
     form.setValue(`venues.${index}.state`, venue.state ?? '')
+    form.setValue(`venues.${index}.zip_code`, venue.zip_code ?? '')
     form.setValue(`venues.${index}.capacity`, venue.capacity ?? '')
     form.clearErrors(`venues.${index}`)
     setMode('selected')
@@ -102,7 +111,9 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
     form.setValue(`venues.${index}.address`, '')
     form.setValue(`venues.${index}.city`, '')
     form.setValue(`venues.${index}.state`, '')
+    form.setValue(`venues.${index}.zip_code`, '')
     form.setValue(`venues.${index}.capacity`, '')
+    form.setValue(`venues.${index}.cf_image_id`, undefined)
     setMode('search')
   }
 
@@ -112,14 +123,60 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
     form.setValue(`venues.${index}.address`, '')
     form.setValue(`venues.${index}.city`, '')
     form.setValue(`venues.${index}.state`, '')
+    form.setValue(`venues.${index}.zip_code`, '')
     form.setValue(`venues.${index}.capacity`, '')
+    form.setValue(`venues.${index}.cf_image_id`, undefined)
+    setVenueImageId(null)
+    setImagePreview(null)
     setMode('create')
     setSearch('')
     setResults([])
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImagePreview(URL.createObjectURL(file))
+
+    startUpload(async () => {
+      const { data, error } = await requestVenueImageUploadUrl()
+      if (error || !data) {
+        toast.error(error ?? 'Failed to get upload URL')
+        setImagePreview(null)
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const uploadRes = await fetch(data.uploadURL, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadRes.ok) {
+        toast.error('Failed to upload image')
+        setImagePreview(null)
+        return
+      }
+
+      setVenueImageId(data.imageId)
+      form.setValue(`venues.${index}.cf_image_id`, data.imageId)
+      toast.success('Image uploaded')
+    })
+
+    e.target.value = ''
+  }
+
+  function removeImage() {
+    setVenueImageId(null)
+    setImagePreview(null)
+    form.setValue(`venues.${index}.cf_image_id`, undefined)
+  }
+
   if (mode === 'selected' && selectedVenue) {
-    const location = [selectedVenue.city, selectedVenue.state].filter(Boolean).join(', ')
+    const location = [selectedVenue.city, selectedVenue.state, selectedVenue.zip_code].filter(Boolean).join(', ')
     return (
       <Card size="sm">
         <CardContent>
@@ -162,7 +219,9 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
 
   if (mode === 'create') {
     return (
-      <Card size="sm">
+      <Card size="sm" onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') e.preventDefault()
+      }}>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">
@@ -185,6 +244,51 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
             <SearchIcon className="size-3" />
             Search existing venues instead
           </button>
+
+          {/* Image upload */}
+          <div className="space-y-1.5">
+            <Label>Image</Label>
+            {imagePreview ? (
+              <div className="relative h-24 w-full overflow-hidden rounded-lg border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="" className="h-full w-full object-cover" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute top-1 right-1 bg-background/80 hover:bg-background"
+                  onClick={removeImage}
+                  disabled={isUploading}
+                >
+                  <XIcon />
+                </Button>
+                {isUploading && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-background/60">
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  </span>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex h-24 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                  <ImageIcon className="size-5" />
+                  <span className="text-xs">Upload image</span>
+                </div>
+              </button>
+            )}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor={`venues.${index}.name`}>Name *</Label>
@@ -220,13 +324,21 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor={`venues.${index}.state`}>State</Label>
               <Input
                 id={`venues.${index}.state`}
                 {...form.register(`venues.${index}.state`)}
                 placeholder="State"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`venues.${index}.zip_code`}>Zip code</Label>
+              <Input
+                id={`venues.${index}.zip_code`}
+                {...form.register(`venues.${index}.zip_code`)}
+                placeholder="e.g. 10001"
               />
             </div>
             <div className="space-y-1.5">

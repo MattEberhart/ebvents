@@ -20,6 +20,7 @@ export interface Venue {
   address: string | null
   city: string | null
   state: string | null
+  zip_code: string | null
   capacity: number | null
   latitude: number | null
   longitude: number | null

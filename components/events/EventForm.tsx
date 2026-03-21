@@ -117,7 +117,9 @@ export function EventForm({
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger className="w-full" aria-invalid={!!errors.sport_type_id}>
-                <SelectValue placeholder="Select a sport" />
+                <SelectValue placeholder="Select a sport">
+                  {sportTypes.find((s) => s.id === field.value)?.name}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {sportTypes.map((st) => (

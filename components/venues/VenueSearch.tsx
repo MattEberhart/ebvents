@@ -96,8 +96,10 @@ export function VenueSearch() {
           value={sortBy}
           onValueChange={(value) => updateParams('sort', value ?? '')}
         >
-          <SelectTrigger className="w-full sm:w-[130px]">
-            <SelectValue />
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue>
+              Sort by: {sortBy === 'name' ? 'Name' : 'Capacity'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">Name</SelectItem>

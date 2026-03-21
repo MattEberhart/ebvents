@@ -30,6 +30,7 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
       address: venue?.address ?? '',
       city: venue?.city ?? '',
       state: venue?.state ?? '',
+      zip_code: venue?.zip_code ?? '',
       capacity: venue?.capacity ?? '',
     },
   })
@@ -179,13 +180,21 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="state">State</Label>
           <Input
             id="state"
             {...register('state')}
             placeholder="State"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="zip_code">Zip code</Label>
+          <Input
+            id="zip_code"
+            {...register('zip_code')}
+            placeholder="e.g. 10001"
           />
         </div>
         <div className="space-y-1.5">

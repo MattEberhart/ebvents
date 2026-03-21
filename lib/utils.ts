@@ -78,6 +78,15 @@ export function formatDuration(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
+export function formatEventTimeRange(startsAt: string, durationMinutes: number): string {
+  const start = new Date(startsAt)
+  const end = new Date(startsAt)
+  end.setMinutes(end.getMinutes() + durationMinutes)
+  const fmt = (d: Date) =>
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  return `${fmt(start)} – ${fmt(end)}`
+}
+
 export function isEventPast(startsAt: string, durationMinutes: number): boolean {
   const end = new Date(startsAt)
   end.setMinutes(end.getMinutes() + durationMinutes)

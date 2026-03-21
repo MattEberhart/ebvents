@@ -50,8 +50,8 @@ This table represents the venues. The columns are id, name, address, city, state
 Again this was an extra for me. Per the challenge we just needed to show venues (plural) for the event. Claude initially just wanted to store these as an array in it's own column of Events. I immediately was thinking about how a venue is way more than the name and added these extra fields.
 Decisions:
 - created_by similar to Events, I want to know who created the venue for future access policy features.
-- I haven't finished yet as I write this, but I believe latitude and longitude are for a future feature where we will verify the address with a Google Maps API and store coordinates for directions. 
-- I went with image id as a column here since venues were an extra. To support many images we would have a venue images table, but I did not want to spend more time spinning up the table, thinking through max image logic, and maintaining a photo carousel in various UXes.
+- I haven't finished yet as I write this, but I believe latitude and longitude are for a future feature where we will verify the address with a Google Maps API and store coordinates for directions. [Google API Feature](/docs/todos/google-places-autocomplete.md)
+- I went with image id as a column here since venue details were an extra. To support many images we would have a venue images table, but I did not want to spend more time spinning up the table, thinking through max image logic, and maintaining a photo carousel in various UXes.
 
 ### Event Venues Table
 This is a table to track the many to many relationship between events and venues. Obviously a venue can be assigne to many events over many days. The reason venue id is not just a column in Events Table is because the challenge explicitly outlines an event can have multiple venues. I was surprised this didn't mean multiple dates as well, but maybe it could be like an AAU tournament on one day with multiple courts/sportsplexes. Columns are id, event_id (fk to events), and venue_id (fk to venues).

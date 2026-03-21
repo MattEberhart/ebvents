@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { EventWithVenues } from '@/lib/types'
-import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast, isEventLive } from '@/lib/utils'
+import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast, isEventLive } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DeleteEventButton } from './DeleteEventButton'
@@ -42,7 +42,6 @@ export function EventTable({
           <TableHead>Sport</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Time</TableHead>
-          <TableHead>Duration</TableHead>
           <TableHead>Venue</TableHead>
           <TableHead className="w-[100px]" />
         </TableRow>
@@ -85,14 +84,13 @@ export function EventTable({
                 </span>
               </TableCell>
               <TableCell>{formatEventDate(event.starts_at)}</TableCell>
-              <TableCell>{formatEventTime(event.starts_at)}</TableCell>
-              <TableCell>{formatDuration(event.duration_minutes)}</TableCell>
+              <TableCell>{formatEventTimeRange(event.starts_at, event.duration_minutes)}</TableCell>
               <TableCell>
                 {event.venues.map((v, i) => (
                   <span key={v.id}>
                     {i > 0 && ', '}
                     <Link
-                      href={`/venues/${v.id}`}
+                      href={`/venues/${v.id}?from=/events/${event.id}`}
                       className="hover:underline text-primary"
                       onClick={(e) => e.stopPropagation()}
                     >

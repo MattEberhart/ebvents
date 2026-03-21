@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getVenue } from '@/actions/venues'
 import { getCfImageUrl } from '@/lib/cloudflare'
-import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast } from '@/lib/utils'
+import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -13,10 +13,14 @@ import { ArrowLeftIcon, MapPinIcon, UsersIcon, ClockIcon } from 'lucide-react'
 
 export default async function VenueDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ from?: string }>
 }) {
   const { id } = await params
+  const sp = await searchParams
+  const from = sp.from
   const { data: venue, error } = await getVenue(id)
 
   if (error || !venue) notFound()
@@ -24,18 +28,29 @@ export default async function VenueDetailPage({
   const imageUrl = venue.cf_image_id ? getCfImageUrl(venue.cf_image_id) : null
 
   const upcomingEvents = venue.events
-    .filter((e) => !isEventPast(e.starts_at, e.duration_minutes) && e.status === 'active')
+    .filter((e) => !isEventPast(e.starts_at, e.duration_minutes))
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
 
   const pastEvents = venue.events
-    .filter((e) => isEventPast(e.starts_at, e.duration_minutes) || e.status === 'cancelled')
+    .filter((e) => isEventPast(e.starts_at, e.duration_minutes))
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())
+
+  // Determine back link based on navigation context
+  let backHref = '/venues'
+  let backLabel = 'Back to venues'
+  if (from?.startsWith('/events/')) {
+    backHref = from
+    backLabel = 'Back to event'
+  } else if (from === '/') {
+    backHref = '/'
+    backLabel = 'Back to events'
+  }
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Button variant="ghost" size="sm" render={<Link href="/venues" />}>
+      <Button variant="ghost" size="sm" render={<Link href={backHref} />}>
         <ArrowLeftIcon className="mr-1" />
-        Back to venues
+        {backLabel}
       </Button>
 
       <VenueImageUpload venueId={venue.id} imageUrl={imageUrl} />
@@ -43,11 +58,11 @@ export default async function VenueDetailPage({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{venue.name}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {(venue.address || venue.city || venue.state) && (
+          {(venue.address || venue.city || venue.state || venue.zip_code) && (
             <div className="flex items-start gap-1.5">
               <MapPinIcon className="size-4 mt-0.5 shrink-0" />
               <span>
-                {[venue.address, venue.city, venue.state]
+                {[venue.address, venue.city, venue.state, venue.zip_code]
                   .filter(Boolean)
                   .join(', ')}
               </span>
@@ -77,17 +92,20 @@ export default async function VenueDetailPage({
             <div className="space-y-2">
               {upcomingEvents.map((event) => (
                 <Link key={event.id} href={`/events/${event.id}`} className="block">
-                  <Card size="sm" className="hover:bg-muted/50 transition-colors">
+                  <Card size="sm" className={cn('hover:bg-muted/50 transition-colors', event.status === 'cancelled' && 'opacity-50')}>
                     <CardContent className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', sportColor(event.sport_type.name))}>
                           {event.sport_type.name}
                         </span>
                         <span className="font-medium">{event.name}</span>
+                        {event.status === 'cancelled' && (
+                          <Badge variant="destructive" className="text-xs">Cancelled</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <ClockIcon className="size-3.5" />
-                        {formatEventDate(event.starts_at)} at {formatEventTime(event.starts_at)}
+                        {formatEventDate(event.starts_at)} &middot; {formatEventTimeRange(event.starts_at, event.duration_minutes)}
                       </div>
                     </CardContent>
                   </Card>

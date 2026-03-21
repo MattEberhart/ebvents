@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { safeAction, UserError, type ActionResult } from '@/lib/utils'
 import type { Venue, VenueWithEvents, VenueQueryParams, PaginatedResult } from '@/lib/types'
+import { deleteCfImage } from '@/lib/cloudflare'
 import type { VenueFormValues } from '@/lib/validations'
 import { PAGE_SIZE } from '@/lib/constants'
 import { mapEventWithVenues, paginationRange } from '@/lib/queries'
@@ -121,6 +122,7 @@ export async function createVenue(values: VenueFormValues, cfImageId?: string): 
         address: values.address || null,
         city: values.city || null,
         state: values.state || null,
+        zip_code: values.zip_code || null,
         capacity: values.capacity ? Number(values.capacity) : null,
         cf_image_id: cfImageId || null,
         created_by: user.id,
@@ -147,6 +149,7 @@ export async function updateVenue(id: string, values: VenueFormValues, cfImageId
       address: values.address || null,
       city: values.city || null,
       state: values.state || null,
+      zip_code: values.zip_code || null,
       capacity: values.capacity ? Number(values.capacity) : null,
     }
 
@@ -172,12 +175,25 @@ export async function deleteVenue(id: string): Promise<ActionResult> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new UserError('Not authenticated')
 
+    // Fetch image ID before deleting the row
+    const { data: venue } = await supabase
+      .from('venues')
+      .select('cf_image_id')
+      .eq('id', id)
+      .single()
+
     const { error } = await supabase
       .from('venues')
       .delete()
       .eq('id', id)
 
     if (error) throw error
+
+    // Clean up Cloudflare image after successful deletion
+    if (venue?.cf_image_id) {
+      await deleteCfImage(venue.cf_image_id)
+    }
+
     revalidatePath('/venues')
   })
 }
@@ -242,17 +258,7 @@ export async function confirmVenueImageUpload(
 
     // Delete old CF image if it existed
     if (oldImageId) {
-      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
-      const apiToken = process.env.CLOUDFLARE_IMAGES_API_TOKEN
-      if (accountId && apiToken) {
-        await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${accountId}/images/v1/${oldImageId}`,
-          {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${apiToken}` },
-          },
-        ).catch(() => {})
-      }
+      await deleteCfImage(oldImageId)
     }
 
     revalidatePath(`/venues/${venueId}`)

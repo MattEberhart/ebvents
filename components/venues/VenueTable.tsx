@@ -35,6 +35,7 @@ export function VenueTable({ venues }: { venues: Venue[] }) {
           <TableHead>Name</TableHead>
           <TableHead>City</TableHead>
           <TableHead>State</TableHead>
+          <TableHead>Zip</TableHead>
           <TableHead>Capacity</TableHead>
           <TableHead className="w-[100px]" />
         </TableRow>
@@ -49,6 +50,7 @@ export function VenueTable({ venues }: { venues: Venue[] }) {
             <TableCell className="font-medium">{venue.name}</TableCell>
             <TableCell>{venue.city ?? '—'}</TableCell>
             <TableCell>{venue.state ?? '—'}</TableCell>
+            <TableCell>{venue.zip_code ?? '—'}</TableCell>
             <TableCell>
               {venue.capacity ? venue.capacity.toLocaleString() : '—'}
             </TableCell>

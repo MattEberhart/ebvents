@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { signUp, signInWithGoogle, verifySignupOtp, resendSignupConfirmation } from '@/actions/auth'
+import { getProfile } from '@/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -47,7 +48,9 @@ export default function SignUpPage() {
         toast.error(error)
         return
       }
-      toast.success('Email confirmed! Welcome to ebvents.')
+      const { data: profile } = await getProfile()
+      const name = profile?.first_name ?? 'there'
+      toast.success(`Welcome to ebvents, ${name}!`)
       router.push('/')
       router.refresh()
     })

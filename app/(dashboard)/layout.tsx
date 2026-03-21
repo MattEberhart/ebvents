@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { signOut } from '@/actions/auth'
 import { getProfile } from '@/actions/profile'
 import { getAvatarUrl } from '@/lib/cloudflare'
-import { Button } from '@/components/ui/button'
 import { NavLinks } from '@/components/NavLinks'
 import { AccountSheet } from '@/components/AccountSheet'
 
@@ -26,24 +24,12 @@ export default async function DashboardLayout({
           </Link>
           <div className="flex items-center gap-3">
             <NavLinks />
-            <div className="flex items-center gap-2">
-              <AccountSheet
-                avatarUrl={avatarUrl}
-                firstName={profile?.first_name ?? null}
-                lastName={profile?.last_name ?? null}
-                email={user?.email ?? ''}
-              />
-              {profile?.first_name && (
-                <span className="hidden text-sm sm:inline">
-                  Hi, {profile.first_name}
-                </span>
-              )}
-            </div>
-            <form action={signOut}>
-              <Button variant="ghost" size="sm" type="submit">
-                Sign out
-              </Button>
-            </form>
+            <AccountSheet
+              avatarUrl={avatarUrl}
+              firstName={profile?.first_name ?? null}
+              lastName={profile?.last_name ?? null}
+              email={user?.email ?? ''}
+            />
           </div>
         </div>
       </header>

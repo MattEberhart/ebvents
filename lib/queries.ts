@@ -31,6 +31,8 @@ interface VenueInput {
   address?: string
   city?: string
   state?: string
+  zip_code?: string
+  cf_image_id?: string
   capacity?: number | string
 }
 
@@ -51,6 +53,8 @@ export async function upsertVenuesForEvent(
           address: venue.address || null,
           city: venue.city || null,
           state: venue.state || null,
+          zip_code: venue.zip_code || null,
+          cf_image_id: venue.cf_image_id || null,
           capacity: venue.capacity ? Number(venue.capacity) : null,
           created_by: userId,
         })

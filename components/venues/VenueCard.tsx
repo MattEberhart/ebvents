@@ -33,7 +33,7 @@ export function VenueCard({ venue }: { venue: Venue }) {
           <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
             <MapPinIcon className="size-3.5 mt-0.5 shrink-0" />
             <span>
-              {[venue.address, venue.city, venue.state].filter(Boolean).join(', ')}
+              {[venue.address, venue.city, venue.state, venue.zip_code].filter(Boolean).join(', ')}
             </span>
           </div>
         )}

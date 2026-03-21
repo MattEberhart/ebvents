@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { EventWithVenues } from '@/lib/types'
-import { cn, sportColor, formatEventDate, formatEventTime, formatDuration, isEventPast, isEventLive } from '@/lib/utils'
+import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast, isEventLive } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,9 +47,9 @@ export function EventCard({
       <CardContent className="space-y-2">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <ClockIcon className="size-3.5" />
-          <span>{formatEventDate(event.starts_at)} at {formatEventTime(event.starts_at)}</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span>{formatDuration(event.duration_minutes)}</span>
+          <span>{formatEventDate(event.starts_at)}</span>
+          <span className="text-muted-foreground/50">&middot;</span>
+          <span>{formatEventTimeRange(event.starts_at, event.duration_minutes)}</span>
         </div>
         {event.venues.length > 0 && (
           <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
@@ -59,7 +59,7 @@ export function EventCard({
                 <span key={v.id}>
                   {i > 0 && ', '}
                   <Link
-                    href={`/venues/${v.id}`}
+                    href={`/venues/${v.id}?from=/events/${event.id}`}
                     className="hover:underline hover:text-foreground"
                   >
                     {v.name}
