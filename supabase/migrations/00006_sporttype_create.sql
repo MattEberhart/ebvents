@@ -1,0 +1,1 @@
+create policy "Create sport types" on public.sport_types for insert with check (auth.role() = 'authenticated');
