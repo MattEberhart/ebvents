@@ -46,7 +46,7 @@ export function EventCard({
                 <span key={v.id}>
                   {i > 0 && ', '}
                   <Link
-                    href={`/venues/${v.id}?from=/events/${event.id}`}
+                    href={`/venues/${v.id}?from=/`}
                     className="hover:underline hover:text-foreground"
                   >
                     {v.name}

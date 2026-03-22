@@ -77,7 +77,7 @@ export function EventTable({
                   <span key={v.id}>
                     {i > 0 && ', '}
                     <Link
-                      href={`/venues/${v.id}?from=/events/${event.id}`}
+                      href={`/venues/${v.id}?from=/`}
                       className="hover:underline text-primary"
                       onClick={(e) => e.stopPropagation()}
                     >
