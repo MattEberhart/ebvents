@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getEvent } from '@/actions/events'
-import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast, isEventLive } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
+import { cn, sportColor, formatEventDate, formatEventTimeRange } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { DeleteEventButton } from '@/components/events/DeleteEventButton'
 import { CancelEventButton } from '@/components/events/CancelEventButton'
 import { ReactivateEventButton } from '@/components/events/ReactivateEventButton'
+import { EventStatusBadge } from '@/components/events/EventStatusBadge'
 import { MapPinIcon, ClockIcon, CalendarIcon, ArrowLeftIcon, UsersIcon } from 'lucide-react'
 
 export default async function EventDetailPage({
@@ -21,10 +21,6 @@ export default async function EventDetailPage({
 
   if (error || !event) notFound()
 
-  const past = isEventPast(event.starts_at, event.duration_minutes)
-  const live = isEventLive(event.starts_at, event.duration_minutes)
-  const cancelled = event.status === 'cancelled'
-
   return (
     <div className="space-y-6 max-w-3xl">
       <Button variant="ghost" size="sm" render={<Link href="/" />}>
@@ -32,26 +28,12 @@ export default async function EventDetailPage({
         Back to events
       </Button>
 
-      <div className={cn(cancelled && 'opacity-60')}>
+      <div>
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', sportColor(event.sport_type.name))}>
             {event.sport_type.name}
           </span>
-          {live && (
-            <span className="flex items-center gap-1 text-xs font-medium text-green-600">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-              </span>
-              Live now
-            </span>
-          )}
-          {past && !cancelled && (
-            <Badge variant="secondary">Past</Badge>
-          )}
-          {cancelled && (
-            <Badge variant="destructive">Cancelled</Badge>
-          )}
+          <EventStatusBadge startsAt={event.starts_at} durationMinutes={event.duration_minutes} status={event.status} />
         </div>
 
         <h1 className="text-3xl font-bold tracking-tight">{event.name}</h1>

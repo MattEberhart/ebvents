@@ -72,15 +72,19 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
   }, [])
 
   const doSearch = useCallback((term: string) => {
-    if (!term.trim()) {
-      setResults([])
-      return
-    }
     setIsSearching(true)
     searchVenues(term).then(({ data }) => {
       setResults(data ?? [])
       setIsSearching(false)
     })
+  }, [])
+
+  // Load recent venues on mount so the list isn't empty
+  useEffect(() => {
+    if (mode === 'search') {
+      doSearch('')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleSearchChange(value: string) {
@@ -393,7 +397,7 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
               <CommandEmpty>No venues found.</CommandEmpty>
             )}
             {results.length > 0 && (
-              <CommandGroup>
+              <CommandGroup heading={search ? 'Search Results' : 'Recent Venues'}>
                 {results.map((venue) => {
                   const location = [venue.city, venue.state].filter(Boolean).join(', ')
                   return (

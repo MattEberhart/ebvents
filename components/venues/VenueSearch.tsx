@@ -14,7 +14,7 @@ import {
 import { SearchIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react'
 
 const CAPACITY_RANGES = [
-  { label: 'Any capacity', value: '' },
+  { label: 'Any Capacity', value: '' },
   { label: 'Under 1,000', value: '0-1000' },
   { label: '1,000 – 10,000', value: '1000-10000' },
   { label: '10,000 – 50,000', value: '10000-50000' },
@@ -81,7 +81,9 @@ export function VenueSearch() {
         onValueChange={(value) => updateParams('capacity', value ?? '')}
       >
         <SelectTrigger className="w-full sm:w-[160px]">
-          <SelectValue placeholder="Any capacity" />
+          <SelectValue placeholder="Any Capacity">
+            {CAPACITY_RANGES.find((r) => r.value === capacity)?.label ?? 'Any Capacity'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {CAPACITY_RANGES.map((range) => (

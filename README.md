@@ -54,7 +54,7 @@ Decisions:
 - I went with image id as a column here since venue details were an extra. To support many images we would have a venue images table, but I did not want to spend more time spinning up the table, thinking through max image logic, and maintaining a photo carousel in various UXes.
 
 ### Event Venues Table
-This is a table to track the many to many relationship between events and venues. Obviously a venue can be assigne to many events over many days. The reason venue id is not just a column in Events Table is because the challenge explicitly outlines an event can have multiple venues. I was surprised this didn't mean multiple dates as well, but maybe it could be like an AAU tournament on one day with multiple courts/sportsplexes. Columns are id, event_id (fk to events), and venue_id (fk to venues).
+This is a table to track the many to many relationship between events and venues. Obviously a venue can be assigned to many events over many days. The reason venue id is not just a column in Events Table is because the challenge explicitly outlines an event can have multiple venues. I was surprised this didn't mean multiple dates as well, but maybe it could be like an AAU tournament on one day with multiple courts/sportsplexes. Columns are id, event_id (fk to events), and venue_id (fk to venues).
 
 ### Querying
 Given the above structures, to load the dashboard we take a subset or all of events depending on how we are paginating, join on event venues by event id, join on venues by the event id from event venues. We could join on sports types, but since it is a small table that doesn't change often I will probably pre load them into memory and fetch from there. Profiles/auth.users is unqueried for the dashboard until we do additional RLS policies like editing only your own events/venues.
@@ -67,6 +67,8 @@ This was completely new to me. My side project PWA/iOS app uses supabase sdks di
 I really like the concept. Avoiding url formatting and fetch calls makes the code clean. The user session token seems to pass seemlessly to the server action whereas in other projects I've had to explicitly pass it over https and parse it out in the API route. Avoiding direct supabase client calls in the front end makes the components short, clean, and clear.
 
 One potential critique is that this only works because the front end and server are hosted in the same place. I wonder if this could bring redundancy issues down the road at scale. Also my understanding is we would need API routes or supabase client queries if we were to build a mobile app, as the front end is not next to the server.
+
+Another plus I just realized is since we are hiding the supabase client in the server side, it is harder for a malicious actor to derive the table and column names and start testing our RLS. The network tab in the dev tools is way cleaner.
 
 - [Auth](actions/auth.ts)
 - [Sport Types](actions/sport-types.ts)
@@ -99,13 +101,13 @@ The user can select their avatar or initial icon in the top right to open their 
 
 Each dashboard supports both a card view and a table view. The challenge specified a 'grid/list layout' and I felt this solved both. The card view supports infinite scrolling and the table view supports pagination. Both experiences utilize the same pagination logic in the server side action. A user can search on the name field in each dashboard. The searches are debounced so as not to hit the db for every letter. Dashboards also support filtering on certain fields and ordering by certain fields. Each do a call to the server side action. Optimizations could be made in certain edge cases where the filter or order by appended would not affect the results or would leave enough results to fill the page, but that was a lot to work through for a minor optimization in a coding challenge.
 
-Sign up via email and password triggers a confirm email with OTP code screen. User must fetch the code from email to verify the account. OAuth with Google avoids this step and takes user straight to the dashboard.
+Sign up via email and password triggers a confirm email with OTP code screen. User must fetch the code from email to verify the account. OAuth with Google avoids this step and takes user straight to the dashboard. I have a todo item in the [Todos](docs/todos) folder to fix the lack of first/last name in the profile row for Google OAuth users.
 
 ### Deployment
 The web app is hosted on vercel. I bought ebvents.com on squarespace and wired it up to point to the web app. Commits to main trigger production deployments. I had to add environment variables on vercel to connect to supabase, cloudflare images, and Groq.
 
 ### Cloudflare Images
-I used my cloudflare images to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN.
+I used my cloudflare images to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN. I created an avatar variant in cloudflare images to scale down the image to the expected size. Images are also stored in local session blobs for immediate feedback and then loaded from cloudflare in a reload / revisit.
 
 ### Emails
 Signup, OTP, etc emails come from supabase, but I did update them to match the app's styling. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. Similarly you'll see a supabase url flash by as you continue with Google.

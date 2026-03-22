@@ -4,21 +4,17 @@ import { getCfImageUrl } from '@/lib/cloudflare'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DeleteVenueButton } from './DeleteVenueButton'
-import { MapPinIcon, UsersIcon, ImageIcon } from 'lucide-react'
+import { MapPinIcon, UsersIcon } from 'lucide-react'
 
 export function VenueCard({ venue }: { venue: Venue }) {
   const imageUrl = venue.cf_image_id ? getCfImageUrl(venue.cf_image_id) : null
 
   return (
     <Card>
-      {imageUrl ? (
-        <div className="h-32 overflow-hidden rounded-t-lg">
+      {imageUrl && (
+        <div className="aspect-video overflow-hidden rounded-t-lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-        </div>
-      ) : (
-        <div className="flex h-32 items-center justify-center rounded-t-lg bg-muted">
-          <ImageIcon className="size-8 text-muted-foreground/40" />
         </div>
       )}
       <CardHeader>

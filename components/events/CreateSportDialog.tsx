@@ -60,7 +60,7 @@ export function CreateSportDialog({
         }
       />
       <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => { e.stopPropagation(); handleSubmit(onSubmit)(e) }}>
           <DialogHeader>
             <DialogTitle>Create sport type</DialogTitle>
             <DialogDescription>

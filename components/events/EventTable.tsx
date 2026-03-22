@@ -3,10 +3,10 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { EventWithVenues } from '@/lib/types'
-import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast, isEventLive } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
+import { cn, sportColor, formatEventDate, formatEventTimeRange } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { DeleteEventButton } from './DeleteEventButton'
+import { EventStatusBadge } from './EventStatusBadge'
 import {
   Table,
   TableBody,
@@ -39,6 +39,7 @@ export function EventTable({
       <TableHeader>
         <TableRow>
           <TableHead>Event</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead>Sport</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Time</TableHead>
@@ -48,35 +49,21 @@ export function EventTable({
       </TableHeader>
       <TableBody>
         {events.map((event) => {
-          const past = isEventPast(event.starts_at, event.duration_minutes)
-          const live = isEventLive(event.starts_at, event.duration_minutes)
-          const cancelled = event.status === 'cancelled'
           return (
             <TableRow
               key={event.id}
-              className={cn(
-                'cursor-pointer',
-                past && 'opacity-60',
-                cancelled && 'opacity-50'
-              )}
+              className="cursor-pointer"
               onClick={() => router.push(`/events/${event.id}`)}
             >
               <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  {event.name}
-                  {live && (
-                    <span className="flex items-center gap-1 text-xs font-medium text-green-600">
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                      </span>
-                      Live
-                    </span>
-                  )}
-                  {cancelled && (
-                    <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-                  )}
-                </div>
+                {event.name}
+              </TableCell>
+              <TableCell>
+                <EventStatusBadge
+                  startsAt={event.starts_at}
+                  durationMinutes={event.duration_minutes}
+                  status={event.status}
+                />
               </TableCell>
               <TableCell>
                 <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', sportColor(event.sport_type.name))}>

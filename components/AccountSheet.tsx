@@ -34,6 +34,7 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
   const [isPending, startTransition] = useTransition()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  const [imgError, setImgError] = useState(false)
   const initials = firstName?.[0]?.toUpperCase() ?? '?'
   const displayAvatar = previewUrl ?? avatarUrl
 
@@ -50,6 +51,7 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
     if (!file) return
 
     // Show local preview immediately
+    setImgError(false)
     setPreviewUrl(URL.createObjectURL(file))
 
     startUpload(async () => {
@@ -107,13 +109,14 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
       <SheetTrigger
         className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-xs font-medium text-muted-foreground ring-offset-background transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
-        {avatarUrl ? (
+        {avatarUrl && !imgError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt=""
             className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
           />
         ) : (
           initials
@@ -134,13 +137,14 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
               disabled={isUploading}
               className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-lg font-medium text-muted-foreground ring-offset-background transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50"
             >
-              {displayAvatar ? (
+              {displayAvatar && !imgError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={displayAvatar}
                   alt=""
                   className="h-full w-full object-cover"
                   referrerPolicy="no-referrer"
+                  onError={() => setImgError(true)}
                 />
               ) : (
                 initials

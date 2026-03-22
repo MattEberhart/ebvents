@@ -5,9 +5,8 @@ import { getCfImageUrl } from '@/lib/cloudflare'
 import { cn, sportColor, formatEventDate, formatEventTimeRange, isEventPast } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { VenueImageUpload } from '@/components/venues/VenueImageUpload'
+import { EventStatusBadge } from '@/components/events/EventStatusBadge'
 import { DeleteVenueButton } from '@/components/venues/DeleteVenueButton'
 import { ArrowLeftIcon, MapPinIcon, UsersIcon, ClockIcon } from 'lucide-react'
 
@@ -53,7 +52,12 @@ export default async function VenueDetailPage({
         {backLabel}
       </Button>
 
-      <VenueImageUpload venueId={venue.id} imageUrl={imageUrl} />
+      {imageUrl && (
+        <div className="aspect-video max-h-64 w-full overflow-hidden rounded-lg">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        </div>
+      )}
 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{venue.name}</h1>
@@ -92,16 +96,14 @@ export default async function VenueDetailPage({
             <div className="space-y-2">
               {upcomingEvents.map((event) => (
                 <Link key={event.id} href={`/events/${event.id}`} className="block">
-                  <Card size="sm" className={cn('hover:bg-muted/50 transition-colors', event.status === 'cancelled' && 'opacity-50')}>
+                  <Card size="sm" className="hover:bg-muted/50 transition-colors">
                     <CardContent className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', sportColor(event.sport_type.name))}>
                           {event.sport_type.name}
                         </span>
                         <span className="font-medium">{event.name}</span>
-                        {event.status === 'cancelled' && (
-                          <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-                        )}
+                        <EventStatusBadge startsAt={event.starts_at} durationMinutes={event.duration_minutes} status={event.status} />
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <ClockIcon className="size-3.5" />
@@ -124,16 +126,14 @@ export default async function VenueDetailPage({
             <div className="space-y-2">
               {pastEvents.map((event) => (
                 <Link key={event.id} href={`/events/${event.id}`} className="block">
-                  <Card size="sm" className="opacity-60 hover:opacity-80 transition-opacity">
+                  <Card size="sm" className="hover:bg-muted/50 transition-colors">
                     <CardContent className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span className={cn('inline-block rounded-md px-2 py-0.5 text-xs font-medium', sportColor(event.sport_type.name))}>
                           {event.sport_type.name}
                         </span>
                         <span className="font-medium">{event.name}</span>
-                        {event.status === 'cancelled' && (
-                          <Badge variant="destructive" className="text-xs">Cancelled</Badge>
-                        )}
+                        <EventStatusBadge startsAt={event.starts_at} durationMinutes={event.duration_minutes} status={event.status} />
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <ClockIcon className="size-3.5" />

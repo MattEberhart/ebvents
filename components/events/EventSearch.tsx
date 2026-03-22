@@ -24,6 +24,8 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
   const sortDir = searchParams.get('order') ?? 'desc'
   const status = searchParams.get('status') ?? 'all'
 
+  const STATUS_LABELS: Record<string, string> = { all: 'All Statuses', active: 'Active', cancelled: 'Cancelled' }
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -74,12 +76,12 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
         onValueChange={(value) => updateParams('sport', value ?? '')}
       >
         <SelectTrigger className="w-full sm:w-[150px]">
-          <SelectValue placeholder="All sports">
-            {sportTypes.find((s) => s.id === searchParams.get('sport'))?.name ?? 'All sports'}
+          <SelectValue placeholder="All Sports">
+            {sportTypes.find((s) => s.id === searchParams.get('sport'))?.name ?? 'All Sports'}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">All sports</SelectItem>
+          <SelectItem value="">All Sports</SelectItem>
           {sportTypes.map((st) => (
             <SelectItem key={st.id} value={st.id}>
               {st.name}
@@ -92,10 +94,12 @@ export function EventSearch({ sportTypes }: { sportTypes: SportType[] }) {
         onValueChange={(value) => updateParams('status', value ?? '')}
       >
         <SelectTrigger className="w-full sm:w-[140px]">
-          <SelectValue />
+          <SelectValue placeholder="All Statuses">
+            {STATUS_LABELS[status] ?? 'All Statuses'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="cancelled">Cancelled</SelectItem>
         </SelectContent>

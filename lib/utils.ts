@@ -93,6 +93,15 @@ export function isEventPast(startsAt: string, durationMinutes: number): boolean 
   return end < new Date()
 }
 
+export type EventStatus = 'live' | 'upcoming' | 'past' | 'cancelled'
+
+export function getEventStatus(startsAt: string, durationMinutes: number, status: string): EventStatus {
+  if (status === 'cancelled') return 'cancelled'
+  if (isEventLive(startsAt, durationMinutes)) return 'live'
+  if (isEventPast(startsAt, durationMinutes)) return 'past'
+  return 'upcoming'
+}
+
 export function isEventLive(startsAt: string, durationMinutes: number): boolean {
   const start = new Date(startsAt)
   const end = new Date(startsAt)
