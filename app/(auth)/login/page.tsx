@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,7 +11,6 @@ import {
   otpVerifySchema, type OtpVerifyFormValues,
 } from '@/lib/validations'
 import { signIn, signInWithGoogle, signInWithOtp, verifyOtp } from '@/actions/auth'
-import { getProfile } from '@/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,7 +23,6 @@ export default function LoginPage() {
   const [isPending, startTransition] = useTransition()
   const [mode, setMode] = useState<AuthMode>('password')
   const [otpEmail, setOtpEmail] = useState('')
-  const router = useRouter()
 
   const passwordForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema) as unknown as Resolver<LoginFormValues>,
@@ -53,11 +50,7 @@ export default function LoginPage() {
         toast.error(error)
         return
       }
-      const { data: profile } = await getProfile()
-      const name = profile?.first_name ?? 'there'
-      toast.success(`Welcome back, ${name}!`)
-      router.push('/')
-      router.refresh()
+      window.location.href = '/?welcome=1'
     })
   }
 
@@ -88,11 +81,7 @@ export default function LoginPage() {
         toast.error(error)
         return
       }
-      const { data: profile } = await getProfile()
-      const name = profile?.first_name ?? 'there'
-      toast.success(`Welcome back, ${name}!`)
-      router.push('/')
-      router.refresh()
+      window.location.href = '/?welcome=1'
     })
   }
 
