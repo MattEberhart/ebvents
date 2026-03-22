@@ -53,7 +53,7 @@ export default async function VenueDetailPage({
       </Button>
 
       {imageUrl && (
-        <div className="aspect-video max-h-64 w-full overflow-hidden rounded-lg">
+        <div className="aspect-video w-full overflow-hidden rounded-lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" className="h-full w-full object-cover" />
         </div>

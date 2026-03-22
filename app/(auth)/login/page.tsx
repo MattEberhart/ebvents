@@ -3,14 +3,21 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
+import {
+  loginSchema, type LoginFormValues,
+  otpRequestSchema, type OtpRequestFormValues,
+  otpVerifySchema, type OtpVerifyFormValues,
+} from '@/lib/validations'
 import { signIn, signInWithGoogle, signInWithOtp, verifyOtp } from '@/actions/auth'
 import { getProfile } from '@/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 
 type AuthMode = 'password' | 'otp' | 'otp-verify'
 
@@ -20,9 +27,25 @@ export default function LoginPage() {
   const [otpEmail, setOtpEmail] = useState('')
   const router = useRouter()
 
-  function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+  const passwordForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema) as unknown as Resolver<LoginFormValues>,
+    defaultValues: { email: '', password: '' },
+  })
+
+  const otpForm = useForm<OtpRequestFormValues>({
+    resolver: zodResolver(otpRequestSchema) as unknown as Resolver<OtpRequestFormValues>,
+    defaultValues: { email: '' },
+  })
+
+  const verifyForm = useForm<OtpVerifyFormValues>({
+    resolver: zodResolver(otpVerifySchema) as unknown as Resolver<OtpVerifyFormValues>,
+    defaultValues: { token: '' },
+  })
+
+  function handlePasswordSubmit(values: LoginFormValues) {
+    const formData = new FormData()
+    formData.set('email', values.email)
+    formData.set('password', values.password)
 
     startTransition(async () => {
       const { error } = await signIn(formData)
@@ -38,11 +61,10 @@ export default function LoginPage() {
     })
   }
 
-  function handleOtpRequest(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    setOtpEmail(email)
+  function handleOtpRequest(values: OtpRequestFormValues) {
+    setOtpEmail(values.email)
+    const formData = new FormData()
+    formData.set('email', values.email)
 
     startTransition(async () => {
       const { error } = await signInWithOtp(formData)
@@ -55,10 +77,10 @@ export default function LoginPage() {
     })
   }
 
-  function handleOtpVerify(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
+  function handleOtpVerify(values: OtpVerifyFormValues) {
+    const formData = new FormData()
     formData.set('email', otpEmail)
+    formData.set('token', values.token)
 
     startTransition(async () => {
       const { error } = await verifyOtp(formData)
@@ -97,28 +119,42 @@ export default function LoginPage() {
         <CardContent>
           {mode === 'password' && (
             <>
-              <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                  />
-                </div>
+              <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+                <Controller
+                  control={passwordForm.control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="login-email">Email</FieldLabel>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
+                <Controller
+                  control={passwordForm.control}
+                  name="password"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="login-password">Password</FieldLabel>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        autoComplete="current-password"
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending ? 'Signing in…' : 'Sign in'}
                 </Button>
@@ -135,19 +171,25 @@ export default function LoginPage() {
 
           {mode === 'otp' && (
             <>
-              <form onSubmit={handleOtpRequest} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="otp-email">Email</Label>
-                  <Input
-                    id="otp-email"
-                    name="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    required
-                    autoComplete="email"
-                    defaultValue={otpEmail}
-                  />
-                </div>
+              <form onSubmit={otpForm.handleSubmit(handleOtpRequest)} className="space-y-4">
+                <Controller
+                  control={otpForm.control}
+                  name="email"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="otp-email">Email</FieldLabel>
+                      <Input
+                        id="otp-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending ? 'Sending code…' : 'Send login code'}
                 </Button>
@@ -164,25 +206,30 @@ export default function LoginPage() {
 
           {mode === 'otp-verify' && (
             <>
-              <form onSubmit={handleOtpVerify} className="space-y-4">
+              <form onSubmit={verifyForm.handleSubmit(handleOtpVerify)} className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   We sent an 8-digit code to <span className="font-medium text-foreground">{otpEmail}</span>
                 </p>
-                <div className="space-y-1.5">
-                  <Label htmlFor="token">Verification code</Label>
-                  <Input
-                    id="token"
-                    name="token"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]{8}"
-                    maxLength={8}
-                    placeholder="00000000"
-                    required
-                    autoComplete="one-time-code"
-                    className="text-center text-lg tracking-widest"
-                  />
-                </div>
+                <Controller
+                  control={verifyForm.control}
+                  name="token"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="otp-token">Verification code</FieldLabel>
+                      <Input
+                        id="otp-token"
+                        inputMode="numeric"
+                        maxLength={8}
+                        placeholder="00000000"
+                        autoComplete="one-time-code"
+                        className="text-center text-lg tracking-widest"
+                        aria-invalid={fieldState.invalid}
+                        {...field}
+                      />
+                      <FieldError errors={[fieldState.error]} />
+                    </Field>
+                  )}
+                />
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending ? 'Verifying…' : 'Verify code'}
                 </Button>

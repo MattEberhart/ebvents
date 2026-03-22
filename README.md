@@ -5,7 +5,7 @@ Having just venue names felt lame so I made them their own entities. A user can 
 
 At this time, all users can view, edit, and delete other users' events and venues as this was my understanding of the spec. I'd like to have role based permissions in the future, but this would complicate the signup flow or ideally admins would have their own event management portal and regular users would have read only access to find their desired events. Edit: The longer I work on this I think it's weird that users can edit/delete other users' events and venues. Please know I know how to block this with RLS and only show edit icons on the appropriate cards/rows in the dashboard. I am just not sure what was wanted from the spec. 
 
-The project was implemented in Next.js, hosted in vercel, and stores data in supabase. Users may sign in with email/password, email/OTP code, or Google OAuth all managed by supabase. Google OAuth was new to me, I had to create a Google Cloud account, create an identity, and wire it up in supabase. Database interactions are serverside with Server Actions, not API routes. Images are in cloudflare images rather than supabase object storage for CDN serving + no montly throughput limit that supabase would impose.
+The project was implemented in Next.js, hosted in vercel, and stores data in supabase. Users may sign in with email/password, email/OTP code, or Google OAuth all managed by supabase. Google OAuth was new to me, I had to create a Google Cloud account, create an identity, and wire it up in supabase. Database interactions are serverside with Server Actions, not API routes. Images are in cloudflare images rather than supabase object storage for CDN serving + no montly throughput limit that supabase would impose. Forms actually use the new shadcn Field component rather than the old Form component. Full explanation below in the UI section.
 
 Claude Code assisted in the making of this web app, many GPUs were harmed in the process. 
 
@@ -42,12 +42,13 @@ Decisions:
 ### Sport Types Table
 As I explained above this is to track sport types. Rather than an enum maintained across many potential tables, we can maintain them here and add new ones on the fly. Columns are id, name, display_order, is_active, created_at.
 Decisions:
-- display_order is one I'm not sure about. The idea was to have a way to display popular sports in Event creation first. Soccer is number 1 for example and Esports are 16. Claude ranked them, don't come after me. I played Rocket League back in the day. Paginating on the display_order should be fairly trivial or since this table shouldn't get too large, UX can load them all into memory, order them, and do infinite scrolling / search on the client side.
+- display_order is one I'm not sure about. The idea was to have a way to display popular sports in Event creation first. Soccer is number 1 for example and Esports are 16. Claude ranked them, don't come after me. I played Rocket League back in the day. Paginating on the display_order should be fairly trivial or since this table shouldn't get too large, UX can load them all into memory, order them, and do infinite scrolling / search on the client side. New sports are getting auto ranked last. If we continue with this structure, we need a [Rerank Sports Feature](/docs/rerank_sports.md)
 
 ### Venues Table
 This table represents the venues. The columns are id, name, address, city, state, capacity, latitude, longitude, created_by (fk to auth.users), image id, created_at, updated_at.
 
 Again this was an extra for me. Per the challenge we just needed to show venues (plural) for the event. Claude initially just wanted to store these as an array in it's own column of Events. I immediately was thinking about how a venue is way more than the name and added these extra fields.
+
 Decisions:
 - created_by similar to Events, I want to know who created the venue for future access policy features.
 - I haven't finished yet as I write this, but I believe latitude and longitude are for a future feature where we will verify the address with a Google Maps API and store coordinates for directions. [Google API Feature](/docs/todos/google-places-autocomplete.md)
@@ -93,28 +94,33 @@ Notifications:
 
 
 ### UI
-At first I attempted to use Claude Cowork / Projects to generate UI mockups that I intended to feed to Claude Code as image parameters in the initial propmts. My Claude chat kept bugging out and losing the UI mockups when I asked for changes / screenshots so I ended up letting Claude Code decided the UX color schemes, card designs, etc for the most part given the requirements and plan I had come up with in Claude Cowork / Projects. A hard requirement that I set in the CLAUDE.md file was to use shadcn components as per the challenge.
+At first I attempted to use Claude Cowork / Projects to generate UI mockups that I intended to feed to Claude Code as image parameters in the initial propmts. My Claude chat kept bugging out and losing the UI mockups when I asked for changes / screenshots so I ended up letting Claude Code decided the UX color schemes, card designs, etc for the most part given the requirements and plan I had come up with in Claude Cowork / Projects. After I had a base I went back and made common sense changes - UX friendly values over ids/column names for form / filter entry, Create Item buttons in dashboards not nav bar, wide image view fixes, end time instead of duration, status badges instead of opacity changes, image upload only in edit mode, and more.
 
 I had it implement both an events dashboard and a venues dashboard. The user can toggle between the two via buttons on the nav bar at the top. Changing between these changes the 'Create' button between 'Create Event' and 'Create Venue'. Each of these opens a shadcn form component to enter appropriate fields or images in the venue case. When creating an event the user can choose from the Sports drop down or create a new sport. Similarly the user can choose from available venues or create one.
 
 The user can select their avatar or initial icon in the top right to open their user details. There they can click their avatar again to upload an avatar.
 
-Each dashboard supports both a card view and a table view. The challenge specified a 'grid/list layout' and I felt this solved both. The card view supports infinite scrolling and the table view supports pagination. Both experiences utilize the same pagination logic in the server side action. A user can search on the name field in each dashboard. The searches are debounced so as not to hit the db for every letter. Dashboards also support filtering on certain fields and ordering by certain fields. Each do a call to the server side action. Optimizations could be made in certain edge cases where the filter or order by appended would not affect the results or would leave enough results to fill the page, but that was a lot to work through for a minor optimization in a coding challenge.
+Each dashboard supports both a card view and a table view. The challenge specified a 'grid/list layout' and I felt this solved both. The card view supports infinite scrolling and the table view supports next page. Both experiences utilize the same pagination logic in the server side action. A user can search on the name field in each dashboard. The searches are debounced so as not to hit the db for every letter. Dashboards also support filtering on certain fields and ordering by certain fields. Each do a call to the server side action. Optimizations could be made in certain edge cases where the filter or order by appended would not affect the results or would leave enough results to fill the page, but that was a lot to work through for a minor optimization in a coding challenge.
 
 Sign up via email and password triggers a confirm email with OTP code screen. User must fetch the code from email to verify the account. OAuth with Google avoids this step and takes user straight to the dashboard. I have a todo item in the [Todos](docs/todos) folder to fix the lack of first/last name in the profile row for Google OAuth users.
 
+I've just realized we have not been using shadcn Form component for forms since I used the latest shadcn (base-nova) which has removed or not yet added the Form component. After a deeper look, the [Form Component](https://ui.shadcn.com/docs/components/form) provided in the challenge no longer takes us to a form component, but to form docs that instruct us to use Field components. The Form component was removed from the docs completely. I am migrating my existing simple register forms to the new Field implementation as per the docs. Apologies if using the old Form was truly a hard requirement, but migrating to an older version of shadcn this late in the game would be a nightmare. If it was available to me, I'd have used it. Claude suggested we write our own Form component based on the source code from the old library, but I thought using the latest standard was better. Here is a [Github Discussion](https://github.com/shadcn-ui/ui/discussions/9505) and [Frustrated Redditor](https://www.reddit.com/r/reactjs/comments/1pmte6q/did_shadcnui_just_silently_add_base_ui_support/) on the topic.
+
 ### Deployment
-The web app is hosted on vercel. I bought ebvents.com on squarespace and wired it up to point to the web app. Commits to main trigger production deployments. I had to add environment variables on vercel to connect to supabase, cloudflare images, and Groq.
+The web app is hosted on vercel. I bought ebvents.com on squarespace and wired it up to point to the web app. Commits to main trigger production deployments. I had to add environment variables on vercel to connect to supabase, and cloudflare images.
 
 ### Cloudflare Images
-I used my cloudflare images to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN. I created an avatar variant in cloudflare images to scale down the image to the expected size. Images are also stored in local session blobs for immediate feedback and then loaded from cloudflare in a reload / revisit.
+I used my cloudflare images account to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN. I created an avatar variant in cloudflare images to scale down the image to the expected size. Images are also stored in local session blobs for immediate feedback and then loaded from cloudflare in a reload / revisit.
 
 ### Emails
 Signup, OTP, etc emails come from supabase, but I did update them to match the app's styling. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. Similarly you'll see a supabase url flash by as you continue with Google.
 
 ## How to Run
 - Set environment variables in .env, examples can be found in [Sample .env](/.env.local.example)
+- npm install
 - npm run dev
+
+You won't be able to upload images since you don't have my Cloudflare Account Id or Cloudflare API Token.
 
 ## Extras
 - Events

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useTransition } from 'react'
-import type { UseFormReturn } from 'react-hook-form'
+import { Controller, type UseFormReturn } from 'react-hook-form'
 import type { EventFormValues } from '@/lib/validations'
 import type { Venue } from '@/lib/types'
 import { searchVenues, requestVenueImageUploadUrl } from '@/actions/venues'
@@ -18,6 +18,7 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/components/ui/command'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import { TrashIcon, SearchIcon, PlusIcon, MapPinIcon, UsersIcon, ImageIcon, XIcon } from 'lucide-react'
 
 type SlotMode = 'search' | 'create' | 'selected'
@@ -249,11 +250,11 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
             Search existing venues instead
           </button>
 
-          {/* Image upload */}
+          {/* Image upload — outside Field (separate upload flow) */}
           <div className="space-y-1.5">
             <Label>Image</Label>
             {imagePreview ? (
-              <div className="relative h-24 w-full overflow-hidden rounded-lg border">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imagePreview} alt="" className="h-full w-full object-cover" />
                 <Button
@@ -277,7 +278,7 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex h-24 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
+                className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
               >
                 <div className="flex flex-col items-center gap-1 text-muted-foreground">
                   <ImageIcon className="size-5" />
@@ -294,66 +295,77 @@ export function VenueSlot({ index, form, onRemove, canRemove, initialMode }: Ven
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor={`venues.${index}.name`}>Name *</Label>
-            <Input
-              id={`venues.${index}.name`}
-              {...form.register(`venues.${index}.name`)}
-              placeholder="Venue name"
-              aria-invalid={!!errors.venues?.[index]?.name}
-            />
-            {errors.venues?.[index]?.name && (
-              <p className="text-sm text-destructive">
-                {errors.venues[index].name.message}
-              </p>
+          <Controller
+            control={form.control}
+            name={`venues.${index}.name`}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={`venue-${index}-name`}>Name *</FieldLabel>
+                <Input id={`venue-${index}-name`} placeholder="Venue name" aria-invalid={fieldState.invalid} {...field} />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
             )}
-          </div>
+          />
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor={`venues.${index}.address`}>Address</Label>
-              <Input
-                id={`venues.${index}.address`}
-                {...form.register(`venues.${index}.address`)}
-                placeholder="Street address"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`venues.${index}.city`}>City</Label>
-              <Input
-                id={`venues.${index}.city`}
-                {...form.register(`venues.${index}.city`)}
-                placeholder="City"
-              />
-            </div>
+            <Controller
+              control={form.control}
+              name={`venues.${index}.address`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`venue-${index}-address`}>Address</FieldLabel>
+                  <Input id={`venue-${index}-address`} placeholder="Street address" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`venues.${index}.city`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`venue-${index}-city`}>City</FieldLabel>
+                  <Input id={`venue-${index}-city`} placeholder="City" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor={`venues.${index}.state`}>State</Label>
-              <Input
-                id={`venues.${index}.state`}
-                {...form.register(`venues.${index}.state`)}
-                placeholder="State"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`venues.${index}.zip_code`}>Zip code</Label>
-              <Input
-                id={`venues.${index}.zip_code`}
-                {...form.register(`venues.${index}.zip_code`)}
-                placeholder="e.g. 10001"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`venues.${index}.capacity`}>Capacity</Label>
-              <Input
-                id={`venues.${index}.capacity`}
-                type="number"
-                {...form.register(`venues.${index}.capacity`)}
-                placeholder="e.g. 50000"
-              />
-            </div>
+            <Controller
+              control={form.control}
+              name={`venues.${index}.state`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`venue-${index}-state`}>State</FieldLabel>
+                  <Input id={`venue-${index}-state`} placeholder="State" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`venues.${index}.zip_code`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`venue-${index}-zip`}>Zip code</FieldLabel>
+                  <Input id={`venue-${index}-zip`} placeholder="e.g. 10001" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+            <Controller
+              control={form.control}
+              name={`venues.${index}.capacity`}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`venue-${index}-capacity`}>Capacity</FieldLabel>
+                  <Input id={`venue-${index}-capacity`} type="number" placeholder="e.g. 50000" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
           </div>
         </CardContent>
       </Card>

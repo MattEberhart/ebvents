@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { venueSchema, type VenueFormValues } from '@/lib/validations'
@@ -11,6 +11,7 @@ import { createVenue, updateVenue, requestVenueImageUploadUrl } from '@/actions/
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import { ImageIcon, XIcon } from 'lucide-react'
 
 export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialImageUrl?: string | null }) {
@@ -23,7 +24,7 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
   const [imageId, setImageId] = useState<string | null>(venue?.cf_image_id ?? null)
   const [imagePreview, setImagePreview] = useState<string | null>(initialImageUrl ?? null)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<VenueFormValues>({
+  const form = useForm<VenueFormValues>({
     resolver: zodResolver(venueSchema) as unknown as Resolver<VenueFormValues>,
     defaultValues: {
       name: venue?.name ?? '',
@@ -98,12 +99,12 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-      {/* Image upload */}
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      {/* Image upload — outside Field (separate upload flow) */}
       <div className="space-y-1.5">
         <Label>Venue image</Label>
         {imagePreview ? (
-          <div className="relative h-32 w-full overflow-hidden rounded-lg border">
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imagePreview}
@@ -131,7 +132,7 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
             type="button"
             onClick={() => imageInputRef.current?.click()}
             disabled={isUploading}
-            className="flex h-32 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
+            className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/50 transition-colors hover:bg-muted disabled:opacity-50"
           >
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
               <ImageIcon className="size-6" />
@@ -148,64 +149,77 @@ export function VenueForm({ venue, initialImageUrl }: { venue?: Venue; initialIm
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Venue name *</Label>
-        <Input
-          id="name"
-          {...register('name')}
-          placeholder="e.g. Madison Square Garden"
-          aria-invalid={!!errors.name}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
+      <Controller
+        control={form.control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="venue-name">Venue name *</FieldLabel>
+            <Input id="venue-name" placeholder="e.g. Madison Square Garden" aria-invalid={fieldState.invalid} {...field} />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
-      </div>
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="address">Address</Label>
-          <Input
-            id="address"
-            {...register('address')}
-            placeholder="Street address"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            {...register('city')}
-            placeholder="City"
-          />
-        </div>
+        <Controller
+          control={form.control}
+          name="address"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="venue-address">Address</FieldLabel>
+              <Input id="venue-address" placeholder="Street address" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="city"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="venue-city">City</FieldLabel>
+              <Input id="venue-city" placeholder="City" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="state">State</Label>
-          <Input
-            id="state"
-            {...register('state')}
-            placeholder="State"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="zip_code">Zip code</Label>
-          <Input
-            id="zip_code"
-            {...register('zip_code')}
-            placeholder="e.g. 10001"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="capacity">Capacity</Label>
-          <Input
-            id="capacity"
-            type="number"
-            {...register('capacity')}
-            placeholder="e.g. 50000"
-          />
-        </div>
+        <Controller
+          control={form.control}
+          name="state"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="venue-state">State</FieldLabel>
+              <Input id="venue-state" placeholder="State" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="zip_code"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="venue-zip">Zip code</FieldLabel>
+              <Input id="venue-zip" placeholder="e.g. 10001" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="capacity"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="venue-capacity">Capacity</FieldLabel>
+              <Input id="venue-capacity" type="number" placeholder="e.g. 50000" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
+        />
       </div>
 
       <div className="flex gap-3">

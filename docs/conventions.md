@@ -9,19 +9,20 @@ npm install @supabase/supabase-js @supabase/ssr
 npm install react-hook-form @hookform/resolvers zod
 npm install sonner
 npx shadcn@latest init
-npx shadcn@latest add button input label select textarea card alert-dialog separator command badge skeleton table popover dialog
+npx shadcn@latest add button input label select textarea card alert-dialog separator command badge skeleton table popover dialog form
 ```
 
 ## Hard rules
 
 - **No Supabase client in client components.** All DB access via Server Actions or Server Components only.
 - **No useEffect + fetch for data.** Server Components for initial load, Server Actions for mutations.
-- **Every form uses react-hook-form + zod.** No plain HTML form tags.
+- **Every form uses shadcn Field components (`<Field>`, `<FieldLabel>`, `<FieldError>`) with react-hook-form `Controller` + zod.** No raw `register()` or manual error `<p>` tags.
 - **Every Server Action uses `safeAction`.** Always returns `{ data, error }`.
 - **Search and filter always re-fetch from the DB** via URL params > Server Component. Never filter client-side.
 - **Never delete without an `<AlertDialog>` confirmation.**
 - **Prefer Server Actions over Route Handlers.** The only Route Handler is `/auth/callback`.
 - **Every page group has an error.tsx** for error boundaries.
+- **Do not edit README.md with AI.** The README is hand-written by Matt and must stay that way per the challenge requirements.
 
 ## Patterns
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { sportTypeSchema, type SportTypeFormValues } from '@/lib/validations'
@@ -9,7 +9,7 @@ import type { SportType } from '@/lib/types'
 import { createSportType } from '@/actions/sport-types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ export function CreateSportDialog({
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<SportTypeFormValues>({
+  const form = useForm<SportTypeFormValues>({
     resolver: zodResolver(sportTypeSchema) as unknown as Resolver<SportTypeFormValues>,
     defaultValues: { name: '' },
   })
@@ -44,7 +44,7 @@ export function CreateSportDialog({
       }
       toast.success(`"${data!.name}" sport created`)
       onCreated(data!)
-      reset()
+      form.reset()
       setOpen(false)
     })
   }
@@ -60,24 +60,25 @@ export function CreateSportDialog({
         }
       />
       <DialogContent>
-        <form onSubmit={(e) => { e.stopPropagation(); handleSubmit(onSubmit)(e) }}>
+        <form onSubmit={(e) => { e.stopPropagation(); form.handleSubmit(onSubmit)(e) }}>
           <DialogHeader>
             <DialogTitle>Create sport type</DialogTitle>
             <DialogDescription>
               Add a new sport type. Duplicate names are not allowed.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-1.5">
-            <Label htmlFor="sport-name">Sport name *</Label>
-            <Input
-              id="sport-name"
-              {...register('name')}
-              placeholder="e.g. Pickleball"
-              aria-invalid={!!errors.name}
+          <div className="py-4">
+            <Controller
+              control={form.control}
+              name="name"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="sport-name">Sport name *</FieldLabel>
+                  <Input id="sport-name" placeholder="e.g. Pickleball" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
             />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isPending}>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { profileSchema, type ProfileFormValues } from '@/lib/validations'
@@ -16,9 +16,9 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import { CameraIcon, LogOutIcon } from 'lucide-react'
 
 interface AccountSheetProps {
@@ -38,7 +38,7 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
   const initials = firstName?.[0]?.toUpperCase() ?? '?'
   const displayAvatar = previewUrl ?? avatarUrl
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ProfileFormValues>({
+  const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema) as unknown as Resolver<ProfileFormValues>,
     defaultValues: {
       first_name: firstName ?? '',
@@ -50,7 +50,6 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Show local preview immediately
     setImgError(false)
     setPreviewUrl(URL.createObjectURL(file))
 
@@ -178,27 +177,29 @@ export function AccountSheet({ avatarUrl, firstName, lastName, email }: AccountS
           </div>
 
           {/* Profile form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="account-first-name">First name *</Label>
-              <Input
-                id="account-first-name"
-                {...register('first_name')}
-                placeholder="First name"
-                aria-invalid={!!errors.first_name}
-              />
-              {errors.first_name && (
-                <p className="text-sm text-destructive">{errors.first_name.message}</p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Controller
+              control={form.control}
+              name="first_name"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="account-first-name">First name *</FieldLabel>
+                  <Input id="account-first-name" placeholder="First name" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
               )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="account-last-name">Last name</Label>
-              <Input
-                id="account-last-name"
-                {...register('last_name')}
-                placeholder="Last name"
-              />
-            </div>
+            />
+            <Controller
+              control={form.control}
+              name="last_name"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="account-last-name">Last name</FieldLabel>
+                  <Input id="account-last-name" placeholder="Last name" aria-invalid={fieldState.invalid} {...field} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? 'Saving…' : 'Save changes'}
             </Button>

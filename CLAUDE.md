@@ -6,7 +6,7 @@ Full-stack Sports Event Management app built for a developer interview challenge
 - Next.js 15 App Router, TypeScript strict
 - Supabase (Postgres + Auth: email/password + Google OAuth)
 - Tailwind CSS + shadcn/ui (v4, base-nova style)
-- react-hook-form + zod on every form
+- shadcn Field component + react-hook-form Controller + zod on every form
 - sonner for toasts
 - Vercel for deployment
 
@@ -63,11 +63,3 @@ supabase/
     00001_initial_schema.sql
 ```
 
-## Implementation order
-
-1. Scaffold + install packages (see @docs/conventions.md)
-2. Run DB migrations via Supabase CLI or dashboard (see @docs/database.md)
-3. Build lib/ helpers and Server Actions (see @docs/actions.md)
-4. Auth pages, dashboard layout, event CRUD pages and components
-5. Event detail + venue detail pages (beyond requirements)
-6. Deploy to Vercel

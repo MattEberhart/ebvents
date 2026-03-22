@@ -9,7 +9,6 @@ import { eventSchema, type EventFormValues } from '@/lib/validations'
 import type { SportType, EventWithVenues } from '@/lib/types'
 import { createEvent, updateEvent } from '@/actions/events'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import { VenueFieldArray } from '@/components/venues/VenueFieldArray'
 import { CreateSportDialog } from '@/components/events/CreateSportDialog'
 
@@ -62,8 +62,6 @@ export function EventForm({
     },
   })
 
-  const { register, handleSubmit, formState: { errors } } = form
-
   function onSubmit(values: EventFormValues) {
     startTransition(async () => {
       if (isEditing) {
@@ -87,36 +85,35 @@ export function EventForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-      <div className="space-y-1.5">
-        <Label htmlFor="name">Event name *</Label>
-        <Input
-          id="name"
-          {...register('name')}
-          placeholder="e.g. Lakers vs Celtics"
-          aria-invalid={!!errors.name}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+      <Controller
+        control={form.control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="event-name">Event name *</FieldLabel>
+            <Input id="event-name" placeholder="e.g. Lakers vs Celtics" aria-invalid={fieldState.invalid} {...field} />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
-      </div>
+      />
 
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label>Sport type *</Label>
-          <CreateSportDialog
-            onCreated={(sport) => {
-              setSportTypes((prev) => [...prev, sport].sort((a, b) => a.display_order - b.display_order))
-              form.setValue('sport_type_id', sport.id)
-            }}
-          />
-        </div>
-        <Controller
-          control={form.control}
-          name="sport_type_id"
-          render={({ field }) => (
+      <Controller
+        control={form.control}
+        name="sport_type_id"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <div className="flex items-center justify-between">
+              <FieldLabel>Sport type *</FieldLabel>
+              <CreateSportDialog
+                onCreated={(sport) => {
+                  setSportTypes((prev) => [...prev, sport].sort((a, b) => a.display_order - b.display_order))
+                  form.setValue('sport_type_id', sport.id)
+                }}
+              />
+            </div>
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full" aria-invalid={!!errors.sport_type_id}>
+              <SelectTrigger className="w-full" aria-invalid={fieldState.invalid}>
                 <SelectValue placeholder="Select a sport">
                   {sportTypes.find((s) => s.id === field.value)?.name}
                 </SelectValue>
@@ -129,65 +126,64 @@ export function EventForm({
                 ))}
               </SelectContent>
             </Select>
-          )}
-        />
-        {errors.sport_type_id && (
-          <p className="text-sm text-destructive">{errors.sport_type_id.message}</p>
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
-      </div>
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="start_date">Date *</Label>
-          <Input
-            id="start_date"
-            type="date"
-            {...register('start_date')}
-            aria-invalid={!!errors.start_date}
-          />
-          {errors.start_date && (
-            <p className="text-sm text-destructive">{errors.start_date.message}</p>
+        <Controller
+          control={form.control}
+          name="start_date"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="start-date">Date *</FieldLabel>
+              <Input id="start-date" type="date" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="start_time">Time *</Label>
-          <Input
-            id="start_time"
-            type="time"
-            {...register('start_time')}
-            aria-invalid={!!errors.start_time}
-          />
-          {errors.start_time && (
-            <p className="text-sm text-destructive">{errors.start_time.message}</p>
+        />
+        <Controller
+          control={form.control}
+          name="start_time"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="start-time">Time *</FieldLabel>
+              <Input id="start-time" type="time" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="duration_minutes">Duration (min) *</Label>
-          <Input
-            id="duration_minutes"
-            type="number"
-            {...register('duration_minutes')}
-            placeholder="60"
-            aria-invalid={!!errors.duration_minutes}
-          />
-          {errors.duration_minutes && (
-            <p className="text-sm text-destructive">{errors.duration_minutes.message}</p>
+        />
+        <Controller
+          control={form.control}
+          name="duration_minutes"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="duration">Duration (min) *</FieldLabel>
+              <Input id="duration" type="number" placeholder="60" aria-invalid={fieldState.invalid} {...field} />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
           )}
-        </div>
+        />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          {...register('description')}
-          placeholder="Optional event description"
-          rows={3}
-        />
-        {errors.description && (
-          <p className="text-sm text-destructive">{errors.description.message}</p>
+      <Controller
+        control={form.control}
+        name="description"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="description">Description</FieldLabel>
+            <Textarea
+              id="description"
+              placeholder="Optional event description"
+              rows={3}
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
         )}
-      </div>
+      />
 
       <VenueFieldArray form={form} />
 

@@ -34,7 +34,31 @@ export const sportTypeSchema = z.object({
   name: z.string().min(1, 'Sport name is required').max(50),
 })
 
+export const loginSchema = z.object({
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(1, 'Password is required'),
+})
+
+export const signupSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().optional(),
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+export const otpRequestSchema = z.object({
+  email: z.string().email('Valid email is required'),
+})
+
+export const otpVerifySchema = z.object({
+  token: z.string().length(8, 'Code must be 8 digits').regex(/^\d{8}$/, 'Code must be 8 digits'),
+})
+
 export type EventFormValues = z.infer<typeof eventSchema>
 export type VenueFormValues = z.infer<typeof venueSchema>
 export type ProfileFormValues = z.infer<typeof profileSchema>
 export type SportTypeFormValues = z.infer<typeof sportTypeSchema>
+export type LoginFormValues = z.infer<typeof loginSchema>
+export type SignupFormValues = z.infer<typeof signupSchema>
+export type OtpRequestFormValues = z.infer<typeof otpRequestSchema>
+export type OtpVerifyFormValues = z.infer<typeof otpVerifySchema>
