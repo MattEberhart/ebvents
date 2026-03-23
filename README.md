@@ -113,7 +113,7 @@ The web app is hosted on vercel. I bought ebvents.com on squarespace and wired i
 I used my cloudflare images account to store user avatars and venue images. In our db we are storing the image id. The client uses NEXT_PUBLIC_CF_ACCOUNT_HASH to construct the public delivery url with a helper function. For uploading we do a server side action using CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_IMAGES_API_TOKEN. I created an avatar variant in cloudflare images to scale down the image to the expected size. Images are also stored in local session blobs for immediate feedback and then loaded from cloudflare in a reload / revisit.
 
 ### Emails
-Signup, OTP, etc emails come from supabase, but I did update them to match the app's styling. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. Similarly you'll see a supabase url flash by as you continue with Google.
+Signup, OTP, etc emails come from supabase, but I did update them to match the app's styling. These can be found in [Emails](/supabase/emails). I did not take the time to setup an SMTP server. In my side project I have configured emails to come from my domain using Zoho Mail and later Resend. Similarly you'll see a supabase url flash by as you continue with Google. I've just found supabase limits to 2 emails per hour - test majority with Google OAuth to avoid this.
 
 ## How to Run
 - Set environment variables in .env, examples can be found in [Sample .env](/.env.local.example)
